@@ -12,6 +12,7 @@ import { jobsCredits, planJobs, type ExistingTake, type Job, type RunMode } from
 import { VOICE_CONFIG } from "@/lib/voice-config";
 import { AuditionList, buildChunkModels, matchesFilter, type Filter } from "./AuditionList";
 import { ConfirmSheet } from "./ConfirmSheet";
+import { ExportPanel } from "./ExportPanel";
 import { GeneratePanel, RunBar } from "./GeneratePanel";
 import { ScriptEditor, type ScriptEditorHandle } from "./ScriptEditor";
 import { togglePlayer } from "./TakePlayer";
@@ -248,6 +249,14 @@ export function Desk() {
 
         <section className="space-y-4" aria-labelledby="s-export">
           <SectionLabel num="05" label="Export" id="s-export" />
+          <ExportPanel
+            video={video}
+            chunks={chunks}
+            byChunk={takes.byChunk}
+            picks={takes.picks}
+            script={deferred}
+            disabled={run.state === "running" || run.state === "paused"}
+          />
         </section>
       </main>
 

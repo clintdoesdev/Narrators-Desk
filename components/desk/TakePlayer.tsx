@@ -14,8 +14,9 @@ export function togglePlayer(key: string): boolean {
   return true;
 }
 
-function fmt(s: number): string {
+function fmt(s: number, roundUp = false): string {
   if (!Number.isFinite(s)) return "0:00";
+  if (roundUp) s = Math.ceil(s);
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}:${String(sec).padStart(2, "0")}`;
@@ -51,8 +52,16 @@ export function TakePlayer({
     const el = audio.current;
     if (!el) return;
     const url = URL.createObjectURL(blob);
+    // Native listeners: metadata can load before React's media props attach.
+    const onMeta = () => {
+      if (Number.isFinite(el.duration)) setDuration(el.duration);
+    };
+    el.addEventListener("loadedmetadata", onMeta);
+    el.addEventListener("durationchange", onMeta);
     el.src = url;
     return () => {
+      el.removeEventListener("loadedmetadata", onMeta);
+      el.removeEventListener("durationchange", onMeta);
       el.pause();
       el.removeAttribute("src");
       el.load();
@@ -114,8 +123,6 @@ export function TakePlayer({
           setTime(0);
         }}
         onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onDurationChange={(e) => setDuration(e.currentTarget.duration)}
       />
       <button
         type="button"
@@ -135,7 +142,7 @@ export function TakePlayer({
             {fresh ? null : <span className="ml-1.5 text-warn">stale</span>}
           </span>
           <span className="tabular-nums">
-            {fmt(time)} / {fmt(duration)}
+            {fmt(time)} / {fmt(duration, true)}
           </span>
         </div>
         <div
