@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * Narrator's Desk design tokens. Dark by default: warm charcoal, parchment
+ * text, a single brass accent. Red is reserved for errors, olive for "done".
+ */
+:root {
+  --bg: #12100d;
+  --surface: #1a1713;
+  --surface-2: #221e19;
+  --surface-3: #2b2620;
+  --line: #352f27;
+  --line-strong: #4a4237;
+  --ink: #ece3d2;
+  --ink-muted: #a89c88;
+  --ink-faint: #74695a;
+  --brass: #c49a58;
+  --brass-strong: #d9b173;
+  --brass-ink: #1a1408;
+  --brass-dim: #3a2e1c;
+  --error: #b9645a;
+  --error-dim: #3a211d;
+  --warn: #c9a24f;
+  --warn-dim: #352a16;
+  --done: #8f9663;
+  --done-dim: #272a1a;
+  --tag: #b7a3d9;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-brass: var(--brass);
+  --color-brass-strong: var(--brass-strong);
+  --color-brass-ink: var(--brass-ink);
+  --color-brass-dim: var(--brass-dim);
+  --color-error: var(--error);
+  --color-error-dim: var(--error-dim);
+  --color-warn: var(--warn);
+  --color-warn-dim: var(--warn-dim);
+  --color-done: var(--done);
+  --color-done-dim: var(--done-dim);
+  --color-tag: var(--tag);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--brass-dim);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* Thin, quiet scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
