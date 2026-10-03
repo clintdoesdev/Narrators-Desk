@@ -71,8 +71,9 @@ function CreditsBadge({ credits }: { credits: CreditsView }) {
   }
   if (credits.state === "error") {
     return (
-      <span className="px-2 text-xs text-error" title={credits.message}>
-        Credits unavailable
+      <span className="px-2 text-xs whitespace-nowrap text-error" title={credits.message}>
+        <span className="sm:hidden">Credits n/a</span>
+        <span className="hidden sm:inline">Credits unavailable</span>
       </span>
     );
   }

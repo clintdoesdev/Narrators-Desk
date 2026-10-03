@@ -67,6 +67,28 @@ export function Desk() {
   const refreshUsage = usage.refresh;
   const run = useRun(video, takes.addTake, () => void refreshUsage());
 
+  // Going offline mid-run: pause instead of burning retries; resume on reconnect.
+  const autoPaused = useRef(false);
+  const { state: runState, pause: pauseRun, resume: resumeRun } = run;
+  useEffect(() => {
+    if (!online && runState === "running") {
+      autoPaused.current = true;
+      pauseRun();
+    } else if (online && runState === "paused" && autoPaused.current) {
+      autoPaused.current = false;
+      resumeRun();
+    }
+  }, [online, runState, pauseRun, resumeRun]);
+
+  useEffect(() => {
+    if (runState !== "running" && runState !== "paused") return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [runState]);
+
   const existing = useMemo<ExistingTake[]>(() => {
     const out: ExistingTake[] = [];
     for (const list of takes.byChunk.values()) for (const t of list) out.push({ chunkId: t.chunkId, take: t.take, textHash: t.textHash });
@@ -206,7 +228,11 @@ export function Desk() {
       <main className="mx-auto max-w-6xl space-y-10 px-4 pt-6 pb-36 lg:px-6 lg:pb-16">
         <section className="space-y-4" aria-labelledby="s-script">
           <SectionLabel num="01" label="Script" id="s-script" />
-          <ScriptEditor ref={editor} value={script} onChange={setScript} onLoadExample={() => setScript(EXAMPLE_SCRIPT)} />
+          {hydrated ? (
+            <ScriptEditor ref={editor} value={script} onChange={setScript} onLoadExample={() => setScript(EXAMPLE_SCRIPT)} />
+          ) : (
+            <div className="h-48 animate-pulse rounded-lg border border-line bg-surface" aria-label="Loading saved script" />
+          )}
         </section>
 
         <section className="space-y-4" aria-labelledby="s-validate">
@@ -224,6 +250,11 @@ export function Desk() {
         <section className="space-y-4" aria-labelledby="s-generate">
           <SectionLabel num="03" label="Generate" id="s-generate" />
           {takes.error ? <p className="text-sm text-error">{takes.error}</p> : null}
+          {usage.view.state === "error" ? (
+            <p className="text-sm text-ink-muted">
+              <span className="text-error">Credits unavailable:</span> {usage.view.message}
+            </p>
+          ) : null}
           <GeneratePanel {...generateProps} />
         </section>
 

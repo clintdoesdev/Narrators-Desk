@@ -122,6 +122,11 @@ export function useRun(video: string | null, onTake: (rec: TakeRecord) => void, 
     [video, onTake, onFinish],
   );
 
+  const pause = useCallback(() => runner.current?.pause(), []);
+  const resume = useCallback(() => runner.current?.resume(), []);
+  const cancel = useCallback(() => runner.current?.cancel(), []);
+  const dismissNotice = useCallback(() => setNotice(null), []);
+
   const failed = Object.values(jobs)
     .filter((j) => j.status === "failed")
     .map((j) => j.job);
@@ -133,9 +138,9 @@ export function useRun(video: string | null, onTake: (rec: TakeRecord) => void, 
     notice,
     failed,
     start,
-    pause: () => runner.current?.pause(),
-    resume: () => runner.current?.resume(),
-    cancel: () => runner.current?.cancel(),
-    dismissNotice: () => setNotice(null),
+    pause,
+    resume,
+    cancel,
+    dismissNotice,
   };
 }
