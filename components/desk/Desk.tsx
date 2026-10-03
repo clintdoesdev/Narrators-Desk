@@ -10,9 +10,11 @@ import { EXAMPLE_SCRIPT } from "@/lib/example";
 import { parseScript } from "@/lib/parser";
 import { jobsCredits, planJobs, type ExistingTake, type Job, type RunMode } from "@/lib/runner";
 import { VOICE_CONFIG } from "@/lib/voice-config";
+import { AuditionList, buildChunkModels, matchesFilter, type Filter } from "./AuditionList";
 import { ConfirmSheet } from "./ConfirmSheet";
 import { GeneratePanel, RunBar } from "./GeneratePanel";
 import { ScriptEditor, type ScriptEditorHandle } from "./ScriptEditor";
+import { togglePlayer } from "./TakePlayer";
 import { ValidatePanel } from "./ValidatePanel";
 import { useOnline } from "./useOnline";
 import { useRun } from "./useRun";
@@ -29,6 +31,8 @@ export function Desk() {
   const [hydrated, setHydrated] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
   const [checkingCredits, setCheckingCredits] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [active, setActive] = useState<{ chunkId: string; take: number | null } | null>(null);
   const editor = useRef<ScriptEditorHandle>(null);
   const usage = useUsage();
   const online = useOnline();
@@ -125,6 +129,58 @@ export function Desk() {
 
   const jump = useCallback((line: number) => editor.current?.jumpToLine(line), []);
 
+  const models = useMemo(
+    () => buildChunkModels(chunks, takes.byChunk, run.jobs, takes.picks),
+    [chunks, takes.byChunk, run.jobs, takes.picks],
+  );
+
+  const setPick = takes.setPick;
+  const onPick = useCallback((chunkId: string, take: number) => setPick(chunkId, take), [setPick]);
+  const onActivate = useCallback((chunkId: string, take: number | null) => setActive({ chunkId, take }), []);
+
+  // Keyboard: j/k move between chunks, space plays the focused take, 1–6 pick.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (pending || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      const visible = models.filter((m) => matchesFilter(m, filter));
+      if (visible.length === 0) return;
+      const idx = active ? visible.findIndex((m) => m.chunk.id === active.chunkId) : -1;
+      const defaultTake = (m: (typeof visible)[number]) =>
+        m.pick ?? m.takes.find((t) => t.fresh)?.take ?? m.takes[0]?.take ?? null;
+
+      if (e.key === "j" || e.key === "k") {
+        e.preventDefault();
+        const next = e.key === "j" ? Math.min(visible.length - 1, idx + 1) : Math.max(0, idx === -1 ? 0 : idx - 1);
+        const m = visible[next];
+        setActive({ chunkId: m.chunk.id, take: defaultTake(m) });
+        document.getElementById(`chunk-${m.chunk.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      if (idx === -1) return;
+      const m = visible[idx];
+      if (e.key === " ") {
+        const take = active?.take ?? defaultTake(m);
+        if (take == null) return;
+        e.preventDefault();
+        togglePlayer(`${m.chunk.id}/t${take}`);
+        if (active?.take == null) setActive({ chunkId: m.chunk.id, take });
+        return;
+      }
+      if (/^[1-6]$/.test(e.key)) {
+        const take = Number(e.key);
+        if (m.takes.some((t) => t.take === take && t.fresh)) {
+          e.preventDefault();
+          setPick(m.chunk.id, take);
+          setActive({ chunkId: m.chunk.id, take });
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [models, filter, active, pending, setPick]);
+
   const generateProps = {
     run,
     climax: modeCounts.climax,
@@ -172,7 +228,22 @@ export function Desk() {
 
         <section className="space-y-4" aria-labelledby="s-audition">
           <SectionLabel num="04" label="Audition" id="s-audition" />
-          <button type="button" className="hidden" onClick={() => openReroll(chunks[0]?.id ?? "")} />
+          {takes.loading ? (
+            <p className="text-sm text-ink-muted">Loading cached takes from this device…</p>
+          ) : (
+            <AuditionList
+              models={models}
+              stories={parsed.stories}
+              filter={filter}
+              onFilter={setFilter}
+              activeChunkId={active?.chunkId ?? null}
+              activeTake={active?.take ?? null}
+              canReroll={!blockedReason && run.state !== "running" && run.state !== "paused"}
+              onPick={onPick}
+              onReroll={openReroll}
+              onActivate={onActivate}
+            />
+          )}
         </section>
 
         <section className="space-y-4" aria-labelledby="s-export">
