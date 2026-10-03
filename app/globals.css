@@ -90,3 +90,7 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+.font-mono {
+  font-variant-ligatures: none;
+}

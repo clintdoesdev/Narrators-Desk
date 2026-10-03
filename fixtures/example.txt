@@ -1,0 +1,23 @@
+@@VIDEO: worst-jobs-medieval
+@@TAKES_V2: 2
+@@TAKES_V3: 4
+
+== S0: Cold Open ==
+[AUDIO — v2]
+Today, we're going over the worst jobs in medieval times.
+
+== S1: Richard the Raker ==
+[AUDIO — v2]
+Richard the Raker.
+<break time="1s" />
+It's thirteen twenty-six, and a man named Richard is
+shoveling human waste out of a London cesspit...
+
+See, Richard had one of the most important jobs in the
+city. And one of the worst.
+[VISUAL] STILL — Richard beside his handcart — 6s
+[AUDIO — v3 — CLIMAX]
+The floorboards groan. [gasps] And then... they give way.
+
+[AUDIO — v3]
+So, yeah. [sighs] Go figure.
