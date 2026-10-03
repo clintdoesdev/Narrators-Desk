@@ -9,6 +9,7 @@ import { parseScript } from "@/lib/parser";
 import { EXAMPLE_SCRIPT } from "@/lib/example";
 import { ScriptEditor, type ScriptEditorHandle } from "./ScriptEditor";
 import { ValidatePanel } from "./ValidatePanel";
+import { useUsage } from "./useUsage";
 
 const SCRIPT_KEY = "script";
 
@@ -16,6 +17,7 @@ export function Desk() {
   const [script, setScript] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const editor = useRef<ScriptEditorHandle>(null);
+  const usage = useUsage();
 
   useEffect(() => {
     getMeta<string>(SCRIPT_KEY)
@@ -45,7 +47,7 @@ export function Desk() {
 
   return (
     <div className="min-h-dvh">
-      <Header video={video} credits={{ state: "loading" }} online />
+      <Header video={video} credits={usage.view} online />
       <main className="mx-auto max-w-6xl space-y-10 px-4 pt-6 pb-32 lg:px-6">
         <section className="space-y-4">
           <SectionLabel num="01" label="Script" />
@@ -62,7 +64,7 @@ export function Desk() {
             summary={summary}
             errors={parsed.errors}
             warnings={parsed.warnings}
-            remaining={null}
+            remaining={usage.remaining}
             hasScript={script.trim().length > 0}
             onJump={jump}
           />
