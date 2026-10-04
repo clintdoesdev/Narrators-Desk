@@ -1,27 +1,34 @@
 import type { ReactNode } from "react";
 
-/** Section label: serif numeral, plain label, hairline rule running out right. */
+/** Section head: a quiet numeral and a tight 600-weight headline. */
 export function SectionLabel({
   num,
   label,
   aside,
   id,
+  dark,
+  center,
 }: {
   num: string;
   label: string;
   aside?: ReactNode;
   id?: string;
+  dark?: boolean;
+  center?: boolean;
 }) {
   return (
-    <div className="flex items-baseline gap-3">
-      <span className="font-display text-[26px] leading-none font-light text-brass/80 tabular" aria-hidden="true">
-        {num}
-      </span>
-      <h2 id={id} className="text-[15px] font-medium tracking-tight text-ink">
-        {label}
+    <div className={`flex flex-wrap items-end gap-x-4 gap-y-1 ${center ? "justify-center text-center" : ""}`}>
+      <h2 id={id} className={`t-display ${dark ? "text-on-dark" : "text-ink"}`}>
+        <span className={`mr-3 font-normal tabular ${dark ? "text-on-dark-muted/70" : "text-ink-32"}`} aria-hidden="true">
+          {num}
+        </span>
+        {label}.
       </h2>
-      <span className="h-px flex-1 translate-y-[-4px] bg-gradient-to-r from-line-strong via-line to-transparent" aria-hidden="true" />
-      {aside ? <div className="shrink-0 font-mono text-[11px] text-ink-muted">{aside}</div> : null}
+      {aside ? (
+        <div className={`t-caption pb-1.5 ${center ? "w-full" : "ml-auto"} ${dark ? "text-on-dark-muted" : "text-ink-48"}`}>
+          {aside}
+        </div>
+      ) : null}
     </div>
   );
 }

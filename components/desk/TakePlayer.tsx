@@ -104,13 +104,13 @@ export function TakePlayer({
 
   return (
     <div
-      className={`group relative flex h-12 min-w-0 items-center overflow-hidden rounded-lg ring-1 transition-[background-color,box-shadow] duration-300 ring-inset ${
+      className={`relative flex h-12 min-w-0 items-center overflow-hidden rounded-full bg-canvas transition-shadow duration-200 ${
         picked
-          ? "bg-brass-dim/70 ring-brass/80"
+          ? "shadow-[inset_0_0_0_2px_var(--primary-focus)]"
           : active
-            ? "bg-surface-2 ring-line-strong"
-            : "bg-surface ring-line hover:ring-line-strong"
-      } ${fresh ? "" : "opacity-50"}`}
+            ? "shadow-[inset_0_0_0_1px_var(--ink-32)]"
+            : "shadow-[inset_0_0_0_1px_var(--hairline)]"
+      } ${fresh ? "" : "opacity-45"}`}
       title={`Take ${take} · seed ${seed}${fresh ? "" : " · stale (script changed)"}`}
     >
       <audio
@@ -124,29 +124,34 @@ export function TakePlayer({
         }}
         onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
       />
+      <div className="pointer-events-none absolute inset-y-0 left-0 bg-primary/[0.07]" style={{ width: `${pct}%` }} aria-hidden="true" />
       <button
         type="button"
         onClick={toggle}
         onFocus={onFocus}
         aria-label={`${isPlaying ? "Pause" : "Play"} take ${take}`}
-        className="flex h-12 w-11 shrink-0 items-center justify-center"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full active:scale-95"
       >
         <span
           className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-            isPlaying ? "bg-brass text-brass-ink" : "bg-surface-3 text-ink group-hover:bg-line-strong"
+            isPlaying ? "bg-primary text-white" : "bg-chip text-ink"
           }`}
         >
           {isPlaying ? (
-            <Pause className="h-3.5 w-3.5" aria-hidden="true" />
+            <Pause className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true" />
           ) : (
-            <Play className="h-3.5 w-3.5 translate-x-px" aria-hidden="true" />
+            <Play className="h-3.5 w-3.5 translate-x-px" fill="currentColor" aria-hidden="true" />
           )}
         </span>
       </button>
-      <div className="flex min-w-0 flex-1 items-baseline gap-2 pr-1 font-mono text-[11px]">
-        <span className={picked ? "text-brass-strong" : "text-ink"}>t{take}</span>
-        <span className="truncate text-ink-faint tabular">
-          {fresh ? (isPlaying || time > 0 ? fmt(time) : fmt(duration, true)) : "stale"}
+      <div
+        className="relative flex h-full min-w-0 flex-1 cursor-pointer touch-none items-center gap-2"
+        onPointerDown={seek}
+        role="presentation"
+      >
+        <span className="t-caption-strong text-ink">Take {take}</span>
+        <span className="t-fine truncate text-ink-48 tabular">
+          {fresh ? (isPlaying || time > 0 ? fmt(time) : fmt(duration, true)) : "Stale"}
         </span>
       </div>
       <button
@@ -155,25 +160,16 @@ export function TakePlayer({
         disabled={!fresh}
         aria-pressed={picked}
         aria-label={picked ? `Take ${take} is picked. Unpick` : `Pick take ${take}`}
-        className="flex h-12 w-11 shrink-0 items-center justify-center disabled:cursor-not-allowed"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full active:scale-95 disabled:cursor-not-allowed"
       >
         <span
-          className={`flex h-6 w-6 items-center justify-center rounded-full border transition-colors ${
-            picked
-              ? "border-brass bg-brass text-brass-ink"
-              : "border-line-strong text-transparent group-hover:text-ink-faint hover:border-brass hover:!text-brass"
+          className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
+            picked ? "bg-primary text-white" : "text-transparent shadow-[inset_0_0_0_1.5px_var(--ink-32)] hover:text-ink-32"
           }`}
         >
-          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+          <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
         </span>
       </button>
-      <div
-        className="absolute inset-x-0 bottom-0 h-[2px] cursor-pointer touch-none"
-        onPointerDown={seek}
-        role="presentation"
-      >
-        <div className="h-full bg-brass transition-[width] duration-150 ease-linear" style={{ width: `${pct}%` }} />
-      </div>
     </div>
   );
 }

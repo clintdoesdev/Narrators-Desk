@@ -49,30 +49,22 @@ export const ScriptEditor = forwardRef<
   }
 
   const shared =
-    "px-3 py-3 pl-12 font-mono [font-variant-ligatures:none] text-[13px] leading-[1.6] whitespace-pre-wrap break-words [overflow-wrap:anywhere] lg:text-[13.5px]";
+    "px-4 py-4 pl-14 font-mono text-[13px] leading-[1.65] whitespace-pre-wrap break-words [overflow-wrap:anywhere] [font-variant-ligatures:none]";
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
-        <button
-          type="button"
-          onClick={onLoadExample}
-          className="inline-flex h-11 items-center gap-1.5 rounded-md px-2 text-brass underline-offset-4 hover:underline"
-        >
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+        <button type="button" onClick={onLoadExample} className="link t-body flex h-11 items-center gap-1.5">
           <FileText className="h-4 w-4" aria-hidden="true" /> Load example
         </button>
-        <button
-          type="button"
-          onClick={paste}
-          className="inline-flex h-11 items-center gap-1.5 rounded-md px-2 text-ink-muted hover:text-ink"
-        >
+        <button type="button" onClick={paste} className="link t-body flex h-11 items-center gap-1.5">
           <ClipboardPaste className="h-4 w-4" aria-hidden="true" /> Paste
         </button>
         {value ? (
           <button
             type="button"
             onClick={() => onChange("")}
-            className="ml-auto inline-flex h-11 items-center gap-1.5 rounded-md px-2 text-ink-muted hover:text-ink"
+            className="t-body ml-auto flex h-11 items-center gap-1.5 text-ink-48 transition-colors hover:text-ink"
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" /> Clear
           </button>
@@ -80,37 +72,36 @@ export const ScriptEditor = forwardRef<
       </div>
       <div
         ref={scroller}
-        className="relative max-h-[55vh] min-h-48 overflow-y-auto overflow-x-hidden rounded-lg border border-line bg-surface focus-within:border-line-strong lg:max-h-[46vh]"
+        className="relative max-h-[60vh] min-h-56 overflow-x-hidden overflow-y-auto rounded-[18px] bg-parchment transition-shadow focus-within:shadow-[inset_0_0_0_2px_var(--primary-focus)]"
       >
-        <div className="relative min-h-48">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-9 border-r border-line/70 bg-surface-2/40" aria-hidden="true" />
-        <div ref={mirror} className={`${shared} text-transparent select-none`} aria-hidden="true">
-          {lines.map((l, i) => (
-            <div
-              key={i}
-              data-n={i + 1}
-              className={`relative transition-colors duration-500 before:absolute before:-left-11 before:w-8 before:text-right before:text-[11px] before:text-ink-faint before:content-[attr(data-n)] ${
-                flash === i + 1 ? "bg-brass-dim" : ""
-              }`}
-            >
-              {l || " "}
-            </div>
-          ))}
-        </div>
-        <textarea
-          ref={textarea}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          spellCheck={false}
-          autoCapitalize="off"
-          autoCorrect="off"
-          aria-label="Narration script"
-          placeholder={"@@VIDEO: my-video-slug\n\n== S1: Story title ==\n[AUDIO — v2]\nPaste your script here…"}
-          className={`${shared} absolute inset-0 h-full w-full resize-none overflow-hidden bg-transparent text-ink caret-brass placeholder:text-ink-faint focus:outline-none`}
-        />
+        <div className="relative min-h-56">
+          <div ref={mirror} className={`${shared} text-transparent select-none`} aria-hidden="true">
+            {lines.map((l, i) => (
+              <div
+                key={i}
+                data-n={i + 1}
+                className={`relative rounded-sm transition-colors duration-500 before:absolute before:-left-11 before:w-7 before:text-right before:text-[11px] before:text-ink-32 before:content-[attr(data-n)] ${
+                  flash === i + 1 ? "bg-primary/15" : ""
+                }`}
+              >
+                {l || " "}
+              </div>
+            ))}
+          </div>
+          <textarea
+            ref={textarea}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-label="Narration script"
+            placeholder={"@@VIDEO: my-video-slug\n\n== S1: Story title ==\n[AUDIO — v2]\nPaste your script here…"}
+            className={`${shared} absolute inset-0 h-full w-full resize-none overflow-hidden bg-transparent text-ink caret-primary placeholder:text-ink-32 focus:outline-none focus-visible:outline-none`}
+          />
         </div>
       </div>
-      <p className="text-xs text-ink-faint">
+      <p className="t-fine text-ink-48">
         {lines.length.toLocaleString()} lines · {value.length.toLocaleString()} characters · saved on this device
       </p>
     </div>

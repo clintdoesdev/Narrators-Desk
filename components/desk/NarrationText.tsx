@@ -13,8 +13,8 @@ export function NarrationText({ text }: { text: string }) {
         return (
           <span
             key={i}
-            className={`rounded px-1 py-px font-mono text-[0.82em] ${
-              isBreak ? "bg-surface-3 text-ink-muted" : "bg-tag/10 text-tag"
+            className={`rounded-[5px] px-1.5 py-px font-mono text-[0.8em] ${
+              isBreak ? "bg-parchment text-ink-48" : "bg-chip text-ink-80"
             }`}
           >
             {part}

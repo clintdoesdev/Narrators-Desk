@@ -16,7 +16,7 @@ import { ExportPanel } from "./ExportPanel";
 import { GeneratePanel, RunBar } from "./GeneratePanel";
 import { ScriptEditor, type ScriptEditorHandle } from "./ScriptEditor";
 import { togglePlayer } from "./TakePlayer";
-import { ValidatePanel } from "./ValidatePanel";
+import { Empty, ValidatePanel } from "./ValidatePanel";
 import { useOnline } from "./useOnline";
 import { useRun } from "./useRun";
 import { useTakes } from "./useTakes";
@@ -223,84 +223,114 @@ export function Desk() {
 
   const pendingCost = pending ? jobsCredits(pending.jobs, perChar) : null;
 
+  const runActive = run.state === "running" || run.state === "paused";
+  const navAction = runActive ? (
+    <span className="t-caption text-ink-48 tabular">
+      {run.progress.done} of {run.progress.total} takes
+    </span>
+  ) : modeCounts.all.jobs > 0 ? (
+    <button type="button" onClick={generateProps.onAll} disabled={Boolean(blockedReason)} className="btn btn-primary btn-sm">
+      Generate all
+    </button>
+  ) : null;
+
   return (
     <div className="min-h-dvh">
-      <Header video={video} credits={usage.view} online={online} />
-      <main className="mx-auto max-w-7xl px-4 pt-7 pb-36 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12 lg:px-8 lg:pt-10 lg:pb-20">
-        <div className="space-y-12 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:pb-4">
-        <section className="space-y-5" aria-labelledby="s-script">
-          <SectionLabel num="01" label="Script" id="s-script" aside={video ? <span className="sm:hidden">{video}</span> : null} />
-          {hydrated ? (
-            <ScriptEditor ref={editor} value={script} onChange={setScript} onLoadExample={() => setScript(EXAMPLE_SCRIPT)} />
-          ) : (
-            <div className="h-48 animate-pulse rounded-lg border border-line bg-surface" aria-label="Loading saved script" />
-          )}
-        </section>
-
-        <section className="space-y-5" aria-labelledby="s-validate">
-          <SectionLabel num="02" label="Validate" id="s-validate" />
-          <ValidatePanel
-            summary={summary}
-            errors={parsed.errors}
-            warnings={parsed.warnings}
-            remaining={usage.remaining}
-            hasScript={script.trim().length > 0}
-            onJump={jump}
+      <Header video={video} credits={usage.view} online={online} action={navAction} />
+      <main className="pb-24 md:pb-0">
+        <Tile id="script" tone="light">
+          <SectionLabel
+            num="01"
+            label="Script"
+            id="s-script"
+            aside={video ? <span className="font-mono lg:hidden">{video}</span> : null}
           />
-        </section>
-        </div>
+          <div className="mt-8">
+            {hydrated ? (
+              <ScriptEditor ref={editor} value={script} onChange={setScript} onLoadExample={() => setScript(EXAMPLE_SCRIPT)} />
+            ) : (
+              <div className="h-56 animate-pulse rounded-[18px] bg-parchment" aria-label="Loading saved script" />
+            )}
+          </div>
+        </Tile>
 
-        <div className="mt-12 space-y-14 lg:mt-0">
+        <Tile id="validate" tone="parchment">
+          <SectionLabel num="02" label="Validate" id="s-validate" center />
+          <div className="mt-10">
+            <ValidatePanel
+              summary={summary}
+              errors={parsed.errors}
+              warnings={parsed.warnings}
+              remaining={usage.remaining}
+              hasScript={script.trim().length > 0}
+              onJump={jump}
+            />
+          </div>
+        </Tile>
 
-        <section className="space-y-5" aria-labelledby="s-generate">
-          <SectionLabel num="03" label="Generate" id="s-generate" />
-          {takes.error ? <p className="text-sm text-error">{takes.error}</p> : null}
+        <Tile id="generate" tone="dark">
+          <SectionLabel num="03" label="Generate" id="s-generate" dark center />
+          {takes.error ? <p className="t-caption mt-4 text-center text-error-on-dark">{takes.error}</p> : null}
           {usage.view.state === "error" ? (
-            <p className="text-sm text-ink-muted">
-              <span className="text-error">Credits unavailable:</span> {usage.view.message}
+            <p className="t-caption mt-4 text-center text-on-dark-muted">
+              <span className="text-error-on-dark">Credits unavailable.</span> {usage.view.message}
             </p>
           ) : null}
-          <GeneratePanel {...generateProps} />
-        </section>
+          <div className="mt-12">
+            <GeneratePanel {...generateProps} />
+          </div>
+        </Tile>
 
-        <section className="space-y-5" aria-labelledby="s-audition">
+        <Tile id="audition" tone="parchment" wide>
           <SectionLabel
             num="04"
             label="Audition"
             id="s-audition"
-            aside={chunks.length ? `${Object.keys(takes.picks).length}/${chunks.length} picked` : null}
+            center
+            aside={chunks.length ? `${Object.keys(takes.picks).length} of ${chunks.length} chunks picked` : null}
           />
-          {takes.loading ? (
-            <p className="text-sm text-ink-muted">Loading cached takes from this device…</p>
-          ) : (
-            <AuditionList
-              models={models}
-              stories={parsed.stories}
-              filter={filter}
-              onFilter={setFilter}
-              activeChunkId={active?.chunkId ?? null}
-              activeTake={active?.take ?? null}
-              canReroll={!blockedReason && run.state !== "running" && run.state !== "paused"}
-              onPick={onPick}
-              onReroll={openReroll}
-              onActivate={onActivate}
-            />
-          )}
-        </section>
+          <div className="mt-10">
+            {takes.loading ? (
+              <Empty>Loading cached takes from this device…</Empty>
+            ) : (
+              <AuditionList
+                models={models}
+                stories={parsed.stories}
+                filter={filter}
+                onFilter={setFilter}
+                activeChunkId={active?.chunkId ?? null}
+                activeTake={active?.take ?? null}
+                canReroll={!blockedReason && !runActive}
+                onPick={onPick}
+                onReroll={openReroll}
+                onActivate={onActivate}
+              />
+            )}
+          </div>
+        </Tile>
 
-        <section className="space-y-5" aria-labelledby="s-export">
-          <SectionLabel num="05" label="Export" id="s-export" />
-          <ExportPanel
-            video={video}
-            chunks={chunks}
-            byChunk={takes.byChunk}
-            picks={takes.picks}
-            script={deferred}
-            disabled={run.state === "running" || run.state === "paused"}
-          />
-        </section>
-        </div>
+        <Tile id="export" tone="light">
+          <SectionLabel num="05" label="Export" id="s-export" center />
+          <div className="mt-10">
+            <ExportPanel
+              video={video}
+              chunks={chunks}
+              byChunk={takes.byChunk}
+              picks={takes.picks}
+              script={deferred}
+              disabled={runActive}
+            />
+          </div>
+        </Tile>
       </main>
+
+      <footer className="bg-parchment">
+        <div className="mx-auto max-w-[980px] border-t border-hairline px-5 py-6">
+          <p className="t-fine text-ink-48">
+            Narrator&rsquo;s Desk. Audio is cached on this device only. Nothing leaves it except text sent to ElevenLabs.
+          </p>
+        </div>
+      </footer>
 
       <RunBar
         {...generateProps}
@@ -322,23 +352,23 @@ export function Desk() {
           onClose={closeConfirm}
         >
           {pending.mode.kind === "reroll" ? (
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <span className="text-sm text-ink-muted">New takes to add</span>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <span className="t-body text-ink">New takes to add</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   aria-label="Fewer takes"
                   onClick={() => setRerollCount((pending.mode as { count: number }).count - 1)}
-                  className="flex h-11 w-11 items-center justify-center rounded-md border border-line hover:bg-surface-2"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-chip text-ink transition-transform active:scale-95"
                 >
                   <Minus className="h-4 w-4" aria-hidden="true" />
                 </button>
-                <span className="w-8 text-center font-mono text-lg tabular-nums">{pending.mode.count}</span>
+                <span className="t-tagline w-8 text-center tabular">{pending.mode.count}</span>
                 <button
                   type="button"
                   aria-label="More takes"
                   onClick={() => setRerollCount((pending.mode as { count: number }).count + 1)}
-                  className="flex h-11 w-11 items-center justify-center rounded-md border border-line hover:bg-surface-2"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-chip text-ink transition-transform active:scale-95"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -348,5 +378,25 @@ export function Desk() {
         </ConfirmSheet>
       ) : null}
     </div>
+  );
+}
+
+/** Full-bleed section. The color change between tiles is the divider. */
+function Tile({
+  id,
+  tone,
+  wide,
+  children,
+}: {
+  id: string;
+  tone: "light" | "parchment" | "dark";
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
+  const bg = tone === "dark" ? "bg-tile text-on-dark" : tone === "parchment" ? "bg-parchment" : "bg-canvas";
+  return (
+    <section id={id} aria-labelledby={`s-${id}`} className={`${bg} scroll-mt-[52px]`}>
+      <div className={`mx-auto px-5 py-16 md:py-20 ${wide ? "max-w-[1080px]" : "max-w-[980px]"}`}>{children}</div>
+    </section>
   );
 }

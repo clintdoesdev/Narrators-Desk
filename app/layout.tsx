@@ -1,15 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["opsz", "SOFT"],
-});
-
+// Inter stands in for SF Pro on non-Apple platforms (Android, Windows).
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
-
 const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -20,18 +14,15 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#12100d",
-  colorScheme: "dark",
+  themeColor: "#000000",
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${inter.variable} ${jetbrains.variable} h-full`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

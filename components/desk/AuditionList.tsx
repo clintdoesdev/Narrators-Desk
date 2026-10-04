@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo, useState } from "react";
-import { AlertCircle, ChevronDown, Dices, Flame, Loader2, Timer } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronRight, Flame, Loader2, Timer } from "lucide-react";
 import { chunkStatus, STATUS_LABEL, type ChunkStatus } from "@/lib/status";
 import type { Chunk, Story } from "@/lib/types";
 import { NarrationText } from "./NarrationText";
@@ -105,9 +105,7 @@ export function AuditionList({
   }, [models, stories, filter]);
 
   if (models.length === 0) {
-    return (
-      <Empty>Chunks appear here once the script parses. Every take plays inline; tick the best one per chunk.</Empty>
-    );
+    return <Empty>Chunks appear here once the script parses. Every take plays inline; pick the best one per chunk.</Empty>;
   }
 
   const toggle = (n: number) =>
@@ -120,7 +118,11 @@ export function AuditionList({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-x-1 border-b border-line" role="tablist" aria-label="Filter chunks">
+      <div
+        className="-mx-5 flex snap-x items-center gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0"
+        role="tablist"
+        aria-label="Filter chunks"
+      >
         {FILTERS.map((f) => (
           <button
             key={f.id}
@@ -128,49 +130,45 @@ export function AuditionList({
             role="tab"
             aria-selected={filter === f.id}
             onClick={() => onFilter(f.id)}
-            className={`relative -mb-px flex h-11 items-center gap-1.5 px-2.5 text-sm transition-colors after:absolute after:inset-x-2 after:bottom-0 after:h-[2px] after:rounded-full after:transition-colors ${
-              filter === f.id ? "text-ink after:bg-brass" : "text-ink-muted after:bg-transparent hover:text-ink"
-            }`}
+            className="chip shrink-0 snap-start"
           >
             {f.label}
-            <span className={`font-mono text-[10px] tabular ${filter === f.id ? "text-brass" : "text-ink-faint"}`}>{counts[f.id]}</span>
+            <span className="text-ink-48 tabular">{counts[f.id]}</span>
           </button>
         ))}
-        <span className="mb-3 ml-auto hidden gap-1 text-[11px] text-ink-faint xl:flex">
-          <Kbd>j</Kbd>
-          <Kbd>k</Kbd> move <Kbd>space</Kbd> play <Kbd>1–6</Kbd> pick
-        </span>
       </div>
+      <p className="t-fine hidden text-center text-ink-48 lg:block">
+        <Kbd>J</Kbd> <Kbd>K</Kbd> move between chunks · <Kbd>Space</Kbd> play · <Kbd>1</Kbd>–<Kbd>6</Kbd> pick a take
+      </p>
 
-      {groups.length === 0 ? <p className="py-2 text-sm text-ink-muted">Nothing matches this filter.</p> : null}
+      {groups.length === 0 ? <Empty>Nothing matches this filter.</Empty> : null}
 
       {groups.map(({ story, all, items }) => {
         const isCollapsed = collapsed.has(story.number);
         const done = all.filter((m) => m.status === "done").length;
         const picked = all.filter((m) => m.pick !== undefined).length;
         return (
-          <section key={story.number}>
+          <section key={story.number} className="overflow-hidden rounded-[18px] bg-canvas">
             <button
               type="button"
               onClick={() => toggle(story.number)}
               aria-expanded={!isCollapsed}
-              className="group flex min-h-12 w-full items-center gap-3 text-left"
+              className="flex min-h-16 w-full items-center gap-3 px-5 py-4 text-left md:px-6"
             >
-              <span className="font-mono text-[11px] text-brass">S{story.number}</span>
-              <span className="min-w-0 flex-1 truncate font-display text-lg leading-tight tracking-tight">{story.title}</span>
-              <span className="shrink-0 font-mono text-[11px] text-ink-faint tabular">
+              <div className="min-w-0 flex-1">
+                <p className="t-fine text-ink-48">Story {story.number}</p>
+                <p className="t-tagline truncate text-ink">{story.title}</p>
+              </div>
+              <span className="t-caption shrink-0 text-ink-48 tabular">
                 {done}/{all.length} done · {picked} picked
               </span>
               <ChevronDown
-                className={`h-4 w-4 shrink-0 text-ink-faint transition-transform duration-200 group-hover:text-ink ${isCollapsed ? "-rotate-90" : ""}`}
+                className={`h-5 w-5 shrink-0 text-ink-32 transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`}
                 aria-hidden="true"
               />
             </button>
-            <div className="mb-1 h-[2px] overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
-              <div className="h-full bg-done/70 transition-[width] duration-500" style={{ width: `${(done / all.length) * 100}%` }} />
-            </div>
             {isCollapsed ? null : (
-              <ul className="divide-y divide-line/70">
+              <ul className="border-t border-divider">
                 {items.map((m) => (
                   <ChunkRow
                     key={m.chunk.id}
@@ -194,28 +192,28 @@ export function AuditionList({
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded border border-line border-b-line-strong bg-surface px-1 font-mono text-[10px] text-ink-muted">
+    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] bg-canvas px-1 font-sans text-[11px] text-ink-80 shadow-[inset_0_0_0_1px_var(--hairline)]">
       {children}
     </kbd>
   );
 }
 
 const STATUS_STYLE: Record<ChunkStatus, string> = {
-  idle: "text-ink-faint",
-  partial: "text-ink-muted",
-  queued: "text-ink-muted",
-  generating: "text-brass",
-  done: "text-done",
+  idle: "text-ink-48",
+  partial: "text-ink-48",
+  queued: "text-ink-48",
+  generating: "text-primary",
+  done: "text-success",
   failed: "text-error",
   stale: "text-warn",
 };
 
 const STATUS_DOT: Record<ChunkStatus, string> = {
-  idle: "bg-line-strong",
-  partial: "bg-ink-muted",
-  queued: "bg-ink-muted",
-  generating: "bg-brass animate-pulse",
-  done: "bg-done",
+  idle: "bg-ink-32",
+  partial: "bg-ink-48",
+  queued: "bg-ink-48",
+  generating: "bg-primary animate-pulse",
+  done: "bg-success",
   failed: "bg-error",
   stale: "bg-warn",
 };
@@ -250,65 +248,61 @@ const ChunkRow = memo(function ChunkRow({
       id={`chunk-${chunk.id}`}
       data-chunk={chunk.id}
       onPointerDown={() => !active && onActivate(chunk.id, null)}
-      className={`relative scroll-mt-24 py-4 pl-4 transition-colors duration-300 ${active ? "bg-surface/60" : ""}`}
+      className={`relative scroll-mt-28 border-b border-divider px-5 py-5 transition-colors duration-200 last:border-b-0 md:px-6 ${
+        active ? "bg-pearl" : ""
+      }`}
     >
       <span
-        className={`absolute inset-y-3 left-0 w-[2px] rounded-full transition-colors duration-300 ${active ? "bg-brass" : "bg-transparent"}`}
+        className={`absolute inset-y-0 left-0 w-[3px] transition-colors duration-200 ${active ? "bg-primary" : "bg-transparent"}`}
         aria-hidden="true"
       />
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pr-1">
-        <span className="font-mono text-[13px] text-ink">{chunk.id}</span>
-        <span
-          className={`rounded px-1.5 py-px font-mono text-[10px] leading-4 ring-1 ring-inset ${
-            chunk.model === "v3" ? "text-tag ring-tag/35" : "text-ink-muted ring-line-strong"
-          }`}
-        >
-          {chunk.model}
-        </span>
+      <div className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-mono text-ink">{chunk.id}</span>
+        <span className="text-ink-48">{chunk.model}</span>
         {chunk.climax ? (
-          <span className="flex items-center gap-1 text-[11px] text-brass">
+          <span className="flex items-center gap-1 text-ink-80">
             <Flame className="h-3.5 w-3.5" aria-hidden="true" /> Climax
           </span>
         ) : null}
-        <span className={`ml-auto flex items-center gap-1.5 text-[11px] transition-colors duration-300 ${STATUS_STYLE[status]}`}>
-          <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${STATUS_DOT[status]}`} aria-hidden="true" />
+        <span className={`ml-auto flex items-center gap-1.5 transition-colors duration-200 ${STATUS_STYLE[status]}`}>
+          <span className={`h-2 w-2 rounded-full transition-colors duration-200 ${STATUS_DOT[status]}`} aria-hidden="true" />
           {STATUS_LABEL[status]}
         </span>
       </div>
 
-      <p className="narration mt-2 text-[17px] leading-[1.6] break-words text-ink/95 lg:text-[16px]">
+      <p className="t-body mt-2 break-words text-ink">
         <NarrationText text={chunk.text} />
       </p>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-ink-faint">
-        <span className="tabular">{chunk.chars} chars</span>
+      <div className="t-fine mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-48">
+        <span className="tabular">{chunk.chars} characters</span>
         {chunk.pauseAfter != null ? (
           <span className="flex items-center gap-1">
-            <Timer className="h-3 w-3" aria-hidden="true" /> {chunk.pauseAfter}s after
+            <Timer className="h-3 w-3" aria-hidden="true" /> {chunk.pauseAfter}s pause after
           </span>
         ) : null}
         <span className="tabular">
-          {freshCount}/{chunk.takes} takes
+          {freshCount} of {chunk.takes} takes
         </span>
         <button
           type="button"
           onClick={() => onReroll(chunk.id)}
           disabled={!canReroll}
-          className="-my-3 ml-auto flex h-11 items-center gap-1.5 px-1 font-sans text-xs text-ink-muted transition-colors hover:text-brass disabled:cursor-not-allowed disabled:opacity-40"
+          className="link t-caption -my-3 ml-auto h-11 disabled:cursor-not-allowed disabled:text-ink-32 disabled:no-underline"
         >
-          <Dices className="h-4 w-4" aria-hidden="true" />
           {takes.length === 0 ? "Generate" : "Re-roll"}
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
       {retrying?.retry ? (
-        <p className="mt-2 text-xs text-warn">
+        <p className="t-caption mt-2 text-warn">
           Retry {retrying.retry.attempt} in {Math.round(retrying.retry.delayMs / 1000)}s — {retrying.retry.message}
         </p>
       ) : null}
       {failures.length > 0 ? (
-        <p className="mt-2 flex items-start gap-1.5 text-xs text-error">
-          <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <p className="t-caption mt-2 flex items-start gap-1.5 text-error">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span className="break-words">
             {failures.length === 1 ? `Take ${failures[0].job.take} failed` : `${failures.length} takes failed`}: {failures[0].error}
           </span>
@@ -316,7 +310,7 @@ const ChunkRow = memo(function ChunkRow({
       ) : null}
 
       {takes.length > 0 || slots > 0 ? (
-        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {takes.map((t) => (
             <TakePlayer
               key={t.key}
@@ -334,10 +328,10 @@ const ChunkRow = memo(function ChunkRow({
           {Array.from({ length: slots }, (_, i) => (
             <div
               key={`slot-${i}`}
-              className="flex h-12 items-center gap-2 rounded-lg border border-dashed border-line px-3 font-mono text-[11px] text-ink-faint"
+              className="t-caption flex h-12 items-center gap-2 rounded-full bg-parchment px-4 text-ink-48"
             >
-              <Loader2 className={`h-3.5 w-3.5 ${i < generating ? "animate-spin text-brass" : ""}`} aria-hidden="true" />
-              {i < generating ? "generating" : "queued"}
+              <Loader2 className={`h-4 w-4 ${i < generating ? "animate-spin text-primary" : ""}`} aria-hidden="true" />
+              {i < generating ? "Generating" : "Queued"}
             </div>
           ))}
         </div>

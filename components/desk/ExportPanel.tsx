@@ -78,45 +78,36 @@ export function ExportPanel({
   }
 
   return (
-    <div className="space-y-4">
-      <fieldset>
-        <legend className="sr-only">Export contents</legend>
-        <div className="grid grid-cols-3 rounded-lg bg-surface p-1 ring-1 ring-line ring-inset">
-          {MODES.map((m) => (
-            <label
-              key={m.id}
-              className={`flex h-11 cursor-pointer items-center justify-center rounded-md px-2 text-center text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brass ${
-                mode === m.id ? "bg-surface-3 text-ink shadow-sm" : "text-ink-muted hover:text-ink"
-              }`}
-              title={m.hint}
-            >
-              <input
-                type="radio"
-                name="export-mode"
-                value={m.id}
-                checked={mode === m.id}
-                onChange={() => setMode(m.id)}
-                className="sr-only"
-              />
-              {m.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+    <div className="flex flex-col items-center space-y-8 text-center">
+      <div role="radiogroup" aria-label="Export contents" className="flex flex-wrap justify-center gap-2">
+        {MODES.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            role="radio"
+            aria-checked={mode === m.id}
+            onClick={() => setMode(m.id)}
+            title={m.hint}
+            className="chip"
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
 
-      <div className="font-mono text-[12px] leading-[1.9] text-ink-muted">
+      <div className="w-full max-w-md rounded-[18px] bg-parchment px-6 py-5 text-left font-mono text-[13px] leading-[1.9] text-ink-80">
         <p className="break-all text-ink">{video}.zip</p>
         <Tree depth={0} last>
           {video}/
         </Tree>
         {mode !== "selects" ? (
           <Tree depth={1} last={false}>
-            takes/ <span className="text-ink-faint">· {plan?.takeCount ?? 0} mp3</span>
+            takes/ <span className="text-ink-48">{plan?.takeCount ?? 0} files</span>
           </Tree>
         ) : null}
         {mode !== "all" ? (
           <Tree depth={1} last={false}>
-            selects/ <span className="text-ink-faint">· {plan?.selectCount ?? 0} mp3</span>
+            selects/ <span className="text-ink-48">{plan?.selectCount ?? 0} files</span>
           </Tree>
         ) : null}
         <Tree depth={1} last={false}>
@@ -128,41 +119,44 @@ export function ExportPanel({
       </div>
 
       {mode !== "all" && missingPicks > 0 ? (
-        <p className="text-xs text-warn">
-          {missingPicks} {missingPicks === 1 ? "chunk has" : "chunks have"} takes but no pick yet; {missingPicks === 1 ? "it" : "they"} won&rsquo;t appear in selects/.
+        <p className="t-caption -mt-2 text-ink-48">
+          {missingPicks} {missingPicks === 1 ? "chunk has" : "chunks have"} takes but no pick yet, so{" "}
+          {missingPicks === 1 ? "it won\u2019t" : "they won\u2019t"} appear in selects.
         </p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={download}
-        disabled={disabled || busy || audioFiles === 0}
-        className="relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-lg bg-brass text-sm font-medium text-brass-ink shadow-[0_1px_0_rgb(255_255_255/0.15)_inset,0_8px_24px_-12px_rgb(196_154_88/0.6)] transition-colors hover:bg-brass-strong disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint disabled:shadow-none"
-      >
-        {busy ? (
-          <span
-            className="absolute inset-y-0 left-0 bg-brass-strong transition-[width] duration-300 ease-out"
-            style={{ width: `${progress}%` }}
-            aria-hidden="true"
-          />
+      <div className="flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={download}
+          disabled={disabled || busy || audioFiles === 0}
+          className="btn btn-primary relative overflow-hidden"
+        >
+          {busy ? (
+            <span
+              className="absolute inset-y-0 left-0 bg-white/20 transition-[width] duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+              aria-hidden="true"
+            />
+          ) : null}
+          <span className="relative flex items-center gap-2">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
+            {busy
+              ? `Zipping… ${Math.round(progress ?? 0)}%`
+              : audioFiles === 0
+                ? mode === "selects"
+                  ? "No picks to export"
+                  : "No takes to export"
+                : `Download ${video}.zip`}
+          </span>
+        </button>
+        {disabled ? <p className="t-caption text-ink-48">Export is available once the current run finishes.</p> : null}
+        {error ? (
+          <p role="alert" className="t-caption text-error">
+            {error}
+          </p>
         ) : null}
-        <span className="relative flex items-center gap-2">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
-          {busy
-            ? `Zipping… ${Math.round(progress ?? 0)}%`
-            : audioFiles === 0
-              ? mode === "selects"
-                ? "No picks to export"
-                : "No takes to export"
-              : `Download ${video}.zip`}
-        </span>
-      </button>
-      {disabled ? <p className="text-xs text-ink-faint">Export is available once the current run finishes.</p> : null}
-      {error ? (
-        <p role="alert" className="text-sm text-error">
-          {error}
-        </p>
-      ) : null}
+      </div>
     </div>
   );
 }
@@ -170,7 +164,7 @@ export function ExportPanel({
 function Tree({ children, depth, last }: { children: React.ReactNode; depth: number; last: boolean }) {
   return (
     <p className="whitespace-nowrap" style={{ paddingLeft: `${depth * 1.25}rem` }}>
-      <span className="text-line-strong">{last ? "└─ " : "├─ "}</span>
+      <span className="text-ink-32">{last ? "└─ " : "├─ "}</span>
       {children}
     </p>
   );

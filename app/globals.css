@@ -1,104 +1,311 @@
 @import "tailwindcss";
 
 /*
- * Narrator's Desk design tokens. Dark by default: warm charcoal, parchment
- * text, a single brass accent. Red is reserved for errors, olive for "done".
+ * Narrator's Desk design tokens, after Apple's marketing system:
+ * white / parchment canvases alternating with near-black tiles, one
+ * interactive color (Action Blue), no gradients, no shadows on chrome.
  */
 :root {
-  --bg: #12100d;
-  --surface: #1a1713;
-  --surface-2: #221e19;
-  --surface-3: #2b2620;
-  --line: #352f27;
-  --line-strong: #4a4237;
-  --ink: #ece3d2;
-  --ink-muted: #a89c88;
-  --ink-faint: #74695a;
-  --brass: #c49a58;
-  --brass-strong: #d9b173;
-  --brass-ink: #1a1408;
-  --brass-dim: #3a2e1c;
-  --error: #b9645a;
-  --error-dim: #3a211d;
-  --warn: #c9a24f;
-  --warn-dim: #352a16;
-  --done: #8f9663;
-  --done-dim: #272a1a;
-  --tag: #b7a3d9;
-  color-scheme: dark;
+  --canvas: #ffffff;
+  --parchment: #f5f5f7;
+  --pearl: #fafafc;
+  --ink: #1d1d1f;
+  --ink-80: #333336;
+  --ink-48: #6e6e73;
+  --ink-32: #a1a1a6;
+  --hairline: #e0e0e0;
+  --divider: #f0f0f0;
+  --chip: #e8e8ed;
+  --primary: #0066cc;
+  --primary-focus: #0071e3;
+  --primary-on-dark: #2997ff;
+  --black: #000000;
+  --tile: #272729;
+  --tile-2: #2a2a2c;
+  --tile-3: #1d1d1f;
+  --on-dark: #ffffff;
+  --on-dark-muted: #a1a1a6;
+  --on-dark-hairline: #424245;
+  --error: #e30000;
+  --error-on-dark: #ff6961;
+  --warn: #b64400;
+  --warn-on-dark: #ff9f0a;
+  --success: #008009;
+  --success-on-dark: #30d158;
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
+  --color-canvas: var(--canvas);
+  --color-parchment: var(--parchment);
+  --color-pearl: var(--pearl);
   --color-ink: var(--ink);
-  --color-ink-muted: var(--ink-muted);
-  --color-ink-faint: var(--ink-faint);
-  --color-brass: var(--brass);
-  --color-brass-strong: var(--brass-strong);
-  --color-brass-ink: var(--brass-ink);
-  --color-brass-dim: var(--brass-dim);
+  --color-ink-80: var(--ink-80);
+  --color-ink-48: var(--ink-48);
+  --color-ink-32: var(--ink-32);
+  --color-hairline: var(--hairline);
+  --color-divider: var(--divider);
+  --color-chip: var(--chip);
+  --color-primary: var(--primary);
+  --color-primary-focus: var(--primary-focus);
+  --color-primary-on-dark: var(--primary-on-dark);
+  --color-black: var(--black);
+  --color-tile: var(--tile);
+  --color-tile-2: var(--tile-2);
+  --color-tile-3: var(--tile-3);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-muted: var(--on-dark-muted);
+  --color-on-dark-hairline: var(--on-dark-hairline);
   --color-error: var(--error);
-  --color-error-dim: var(--error-dim);
+  --color-error-on-dark: var(--error-on-dark);
   --color-warn: var(--warn);
-  --color-warn-dim: var(--warn-dim);
-  --color-done: var(--done);
-  --color-done-dim: var(--done-dim);
-  --color-tag: var(--tag);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+  --color-warn-on-dark: var(--warn-on-dark);
+  --color-success: var(--success);
+  --color-success-on-dark: var(--success-on-dark);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Helvetica Neue", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-inter), "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", var(--font-jetbrains), Menlo, monospace;
+  --radius-pill: 9999px;
+  --radius-card: 18px;
 }
 
+@layer base {
 html,
 body {
-  background: var(--bg);
+  background: var(--canvas);
   color: var(--ink);
 }
 
-/* A faint warm lamp glow at the top of the desk. */
 body {
-  background-image: radial-gradient(120% 60% at 50% -10%, rgb(196 154 88 / 0.07), transparent 60%);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.011em;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Narration copy: serif reading face at text optical size. */
-.narration {
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-variation-settings: "SOFT" 50;
-  letter-spacing: 0.002em;
+::selection {
+  background: rgb(0 113 227 / 0.18);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 2px;
+}
+
+.font-mono {
+  font-variant-ligatures: none;
+  letter-spacing: 0;
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-body {
-  font-family: var(--font-sans);
-  overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
 }
 
-::selection {
-  background: var(--brass-dim);
+@layer components {
+/* ---------- Type ladder (300 / 400 / 600 / 700, no 500) ---------- */
+.t-hero {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.07;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 735px) {
+  .t-hero {
+    font-size: 48px;
+  }
+}
+@media (min-width: 1069px) {
+  .t-hero {
+    font-size: 56px;
+  }
+}
+.t-display {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+@media (min-width: 735px) {
+  .t-display {
+    font-size: 40px;
+  }
+}
+.t-lead {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.24;
+  letter-spacing: -0.005em;
+}
+@media (min-width: 735px) {
+  .t-lead {
+    font-size: 24px;
+  }
+}
+.t-tagline {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.19;
+  letter-spacing: -0.01em;
+}
+.t-body {
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.011em;
+}
+.t-body-strong {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.24;
+  letter-spacing: -0.011em;
+}
+.t-caption {
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: -0.006em;
+}
+.t-caption-strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.29;
+  letter-spacing: -0.006em;
+}
+.t-fine {
+  font-size: 12px;
+  line-height: 1.33;
+  letter-spacing: 0;
+}
+
+/* ---------- Buttons: pill = action, press = scale(0.95) ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 9999px;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.011em;
+  white-space: nowrap;
+  transition:
+    transform 120ms ease,
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease,
+    opacity 200ms ease;
+  user-select: none;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.btn:disabled {
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-focus);
+}
+.btn-primary:disabled {
+  background: var(--chip);
+  color: var(--ink-32);
+}
+.btn-secondary {
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+.btn-secondary:disabled {
+  border-color: var(--hairline);
+  color: var(--ink-32);
+}
+.btn-secondary-dark {
+  border: 1px solid var(--primary-on-dark);
+  color: var(--primary-on-dark);
+}
+.btn-secondary-dark:disabled {
+  border-color: var(--on-dark-hairline);
+  color: #6e6e73;
+}
+.btn-primary-dark:disabled {
+  background: var(--on-dark-hairline);
+  color: #86868b;
+}
+.btn-warn {
+  background: var(--warn);
+  color: #fff;
+}
+.btn-sm {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  letter-spacing: -0.006em;
+}
+
+.link {
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+.link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.link-dark {
+  color: var(--primary-on-dark);
+}
+
+/* Configurator chip: pill, hairline; selected = 2px focus blue. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  font-size: 14px;
+  letter-spacing: -0.006em;
   color: var(--ink);
+  transition:
+    box-shadow 200ms ease,
+    transform 120ms ease;
+}
+.chip:active {
+  transform: scale(0.97);
+}
+.chip[aria-selected="true"],
+.chip[aria-checked="true"],
+.chip[data-selected="true"] {
+  box-shadow: inset 0 0 0 2px var(--primary-focus);
 }
 
-:focus-visible {
-  outline: 2px solid var(--brass);
-  outline-offset: 2px;
+/* Frosted bars. */
+.frosted {
+  background: rgb(245 245 247 / 0.8);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+.frosted-dark {
+  background: rgb(0 0 0 / 0.8);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
-/* Thin, quiet scrollbars. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -108,8 +315,4 @@ body {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
-}
-
-.font-mono {
-  font-variant-ligatures: none;
 }

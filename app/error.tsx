@@ -1,24 +1,19 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
 import { QuillMark } from "@/components/QuillMark";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center px-5">
-      <div className="max-w-sm text-center">
-        <QuillMark className="mx-auto mb-4 h-10 w-10 text-error" />
-        <h1 className="font-display text-2xl">Something went wrong</h1>
-        <p className="mt-2 text-sm text-ink-muted">
+    <main className="flex min-h-dvh items-center justify-center bg-parchment px-6">
+      <div className="max-w-md text-center">
+        <QuillMark className="mx-auto mb-6 h-12 w-12 text-ink" />
+        <h1 className="t-display text-ink">Something went wrong.</h1>
+        <p className="t-body mt-3 text-ink-48">
           The desk hit an unexpected error. Your script and generated takes are saved on this device, so nothing is lost.
         </p>
-        {error.digest ? <p className="mt-2 font-mono text-xs text-ink-faint">ref {error.digest}</p> : null}
-        <button
-          type="button"
-          onClick={reset}
-          className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-brass px-5 text-sm font-medium text-brass-ink hover:bg-brass-strong"
-        >
-          <RotateCcw className="h-4 w-4" aria-hidden="true" /> Try again
+        {error.digest ? <p className="t-fine mt-3 font-mono text-ink-48">ref {error.digest}</p> : null}
+        <button type="button" onClick={reset} className="btn btn-primary mt-8">
+          Try again
         </button>
       </div>
     </main>

@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Private ElevenLabs batch narrator for Serious History.",
     start_url: "/",
     display: "standalone",
-    background_color: "#12100d",
-    theme_color: "#12100d",
+    background_color: "#f5f5f7",
+    theme_color: "#000000",
     icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
   };
 }

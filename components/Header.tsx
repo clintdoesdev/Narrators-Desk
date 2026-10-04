@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { LogOut, WifiOff } from "lucide-react";
 import { QuillMark } from "./QuillMark";
 
@@ -8,14 +9,25 @@ export type CreditsView =
   | { state: "error"; message: string }
   | { state: "ok"; remaining: number; limit: number };
 
+const NAV = [
+  { href: "#script", label: "Script" },
+  { href: "#validate", label: "Validate" },
+  { href: "#generate", label: "Generate" },
+  { href: "#audition", label: "Audition" },
+  { href: "#export", label: "Export" },
+];
+
+/** Apple-style two-row nav: a thin black global bar, then a frosted sticky sub-nav. */
 export function Header({
   video,
   credits,
   online,
+  action,
 }: {
   video: string | null;
   credits: CreditsView;
   online: boolean;
+  action?: ReactNode;
 }) {
   async function logout() {
     try {
@@ -26,68 +38,75 @@ export function Header({
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line/80 bg-bg/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-2.5 px-4 lg:px-8">
-        <QuillMark className="h-[22px] w-[22px] shrink-0 text-brass" />
-        <span className="font-display text-[19px] leading-none tracking-tight whitespace-nowrap">Narrator&rsquo;s Desk</span>
-        {video ? (
-          <>
-            <span className="hidden text-line-strong sm:inline" aria-hidden="true">
-              /
-            </span>
-            <span className="hidden min-w-0 truncate font-mono text-xs text-ink-muted sm:inline" title={video}>
+    <>
+      <nav className="bg-black text-on-dark" aria-label="Sections">
+        <div className="mx-auto flex h-11 max-w-[1024px] items-center gap-6 px-4">
+          <a href="#script" aria-label="Narrator's Desk" className="flex h-11 items-center">
+            <QuillMark className="h-[18px] w-[18px]" />
+          </a>
+          <ul className="hidden flex-1 items-center justify-center gap-9 md:flex">
+            {NAV.map((n) => (
+              <li key={n.href}>
+                <a href={n.href} className="t-fine text-on-dark/80 transition-colors hover:text-on-dark">
+                  {n.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="ml-auto flex items-center gap-1 md:ml-0">
+            {!online ? (
+              <span className="t-fine mr-2 flex items-center gap-1.5 text-warn-on-dark">
+                <WifiOff className="h-3.5 w-3.5" aria-hidden="true" /> Offline
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={logout}
+              aria-label="Log out"
+              title="Log out"
+              className="-mr-3 flex h-11 w-11 items-center justify-center text-on-dark/80 transition-colors hover:text-on-dark"
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="frosted sticky top-0 z-30 shadow-[0_1px_0_rgb(0_0_0/0.08)]">
+        <div className="mx-auto flex h-[52px] max-w-[1024px] items-center gap-4 px-4">
+          <div className="min-w-0 flex-1">
+            <p className="t-tagline truncate text-ink">Narrator&rsquo;s Desk</p>
+          </div>
+          {video ? (
+            <span className="t-caption hidden max-w-[16rem] truncate font-mono text-ink-48 lg:inline" title={video}>
               {video}
             </span>
-          </>
-        ) : null}
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          {!online ? (
-            <span className="mr-1 flex h-8 items-center gap-1.5 rounded-md px-2 text-xs text-warn" title="Offline">
-              <WifiOff className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Offline</span>
-            </span>
           ) : null}
-          <CreditsMeter credits={credits} />
-          <button
-            type="button"
-            onClick={logout}
-            aria-label="Log out"
-            title="Log out"
-            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface-2 hover:text-ink"
-          >
-            <LogOut className="h-[17px] w-[17px]" aria-hidden="true" />
-          </button>
+          <Credits credits={credits} />
+          {action ? <div className="hidden md:block">{action}</div> : null}
         </div>
       </div>
-    </header>
+    </>
   );
 }
 
-function CreditsMeter({ credits }: { credits: CreditsView }) {
+function Credits({ credits }: { credits: CreditsView }) {
   if (credits.state === "loading") {
-    return <span className="h-2 w-16 animate-pulse rounded-full bg-surface-3" aria-label="Loading credits" />;
+    return <span className="t-caption text-ink-32">Credits…</span>;
   }
   if (credits.state === "error") {
     return (
-      <span className="px-1 text-xs whitespace-nowrap text-error" title={credits.message}>
-        <span className="sm:hidden">Credits n/a</span>
-        <span className="hidden sm:inline">Credits unavailable</span>
+      <span className="t-caption whitespace-nowrap text-error" title={credits.message}>
+        Credits n/a
       </span>
     );
   }
-  const left = credits.limit ? credits.remaining / credits.limit : 0;
   return (
-    <span className="flex flex-col items-end gap-1 px-1" title={`${credits.remaining.toLocaleString()} of ${credits.limit.toLocaleString()} credits left`}>
-      <span className="font-mono text-[11px] leading-none text-ink tabular">
-        {credits.remaining.toLocaleString()}
-        <span className="text-ink-faint"> left</span>
-      </span>
-      <span className="block h-[3px] w-16 overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
-        <span
-          className={`block h-full rounded-full ${left < 0.1 ? "bg-error" : left < 0.25 ? "bg-warn" : "bg-brass"}`}
-          style={{ width: `${Math.max(2, left * 100)}%` }}
-        />
-      </span>
+    <span
+      className="t-caption whitespace-nowrap text-ink-48"
+      title={`${credits.remaining.toLocaleString()} of ${credits.limit.toLocaleString()} credits left`}
+    >
+      <span className="text-ink tabular">{credits.remaining.toLocaleString()}</span> left
     </span>
   );
 }
