@@ -80,7 +80,7 @@ export const ScriptEditor = forwardRef<
       </div>
       <div
         ref={scroller}
-        className="relative max-h-[55vh] min-h-48 overflow-y-auto overflow-x-hidden rounded-lg border border-line bg-surface focus-within:border-line-strong lg:max-h-[60vh]"
+        className="relative max-h-[55vh] min-h-48 overflow-y-auto overflow-x-hidden rounded-lg border border-line bg-surface focus-within:border-line-strong lg:max-h-[46vh]"
       >
         <div className="relative min-h-48">
         <div className="pointer-events-none absolute inset-y-0 left-0 w-9 border-r border-line/70 bg-surface-2/40" aria-hidden="true" />

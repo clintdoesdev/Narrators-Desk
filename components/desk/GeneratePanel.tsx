@@ -15,6 +15,7 @@ export type GenerateProps = {
   onAll: () => void;
   onRetry: () => void;
   onClearStale: () => void;
+  remaining: number | null;
 };
 
 export function ProgressBar({ total, done, failed }: { total: number; done: number; failed: number }) {
@@ -22,7 +23,7 @@ export function ProgressBar({ total, done, failed }: { total: number; done: numb
   const pctFailed = total ? (failed / total) * 100 : 0;
   return (
     <div
-      className="flex h-1.5 w-full overflow-hidden rounded-full bg-surface-3"
+      className="flex h-[5px] w-full overflow-hidden rounded-full bg-surface-3"
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={total}
@@ -52,6 +53,8 @@ export function GeneratePanel(p: GenerateProps) {
 
   return (
     <div className="space-y-5">
+      <CreditGauge estimate={p.all.credits} jobs={p.all.jobs} remaining={p.remaining} />
+
       {p.blockedReason ? (
         <p className="flex items-start gap-2 text-sm text-ink-muted">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" aria-hidden="true" />
@@ -59,43 +62,43 @@ export function GeneratePanel(p: GenerateProps) {
         </p>
       ) : null}
 
-      <div className="grid gap-2 sm:grid-cols-3">
-        <ModeButton
-          icon={<Flame className="h-4 w-4" aria-hidden="true" />}
-          label="Generate climax only"
-          option={p.climax}
-          disabled={disabled || p.climax.jobs === 0}
-          onClick={p.onClimax}
-        />
-        <ModeButton
-          icon={<Layers className="h-4 w-4" aria-hidden="true" />}
-          label="Generate all"
-          option={p.all}
-          primary
-          disabled={disabled || p.all.jobs === 0}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {p.all.jobs > 0 || p.blockedReason ? (
+        <button
+          type="button"
           onClick={p.onAll}
-        />
-        <ModeButton
-          icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
-          label="Retry failed"
-          option={{ jobs: run.failed.length, credits: -1 }}
-          disabled={active || run.failed.length === 0}
-          onClick={p.onRetry}
-        />
+          disabled={disabled || p.all.jobs === 0}
+          className="flex h-12 items-center justify-center gap-2 rounded-lg bg-brass px-5 sm:flex-1 text-sm font-medium text-brass-ink shadow-[0_1px_0_rgb(255_255_255/0.15)_inset,0_8px_24px_-12px_rgb(196_154_88/0.6)] transition-colors hover:bg-brass-strong disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint disabled:shadow-none"
+        >
+          <Layers className="h-4 w-4" aria-hidden="true" />
+          Generate all · {p.all.jobs} takes
+        </button>
+        ) : null}
+        <div className="flex gap-2">
+          <GhostButton onClick={p.onClimax} disabled={disabled || p.climax.jobs === 0}>
+            <Flame className="h-4 w-4" aria-hidden="true" /> Climax only
+            <Count n={p.climax.jobs} />
+          </GhostButton>
+          <GhostButton onClick={p.onRetry} disabled={active || run.failed.length === 0} tone={run.failed.length ? "error" : undefined}>
+            <RotateCcw className="h-4 w-4" aria-hidden="true" /> Retry failed
+            <Count n={run.failed.length} />
+          </GhostButton>
+        </div>
       </div>
-      <p className="text-xs text-ink-faint">
-        Cached takes are never regenerated. Re-roll a single chunk from its row in Audition.
-      </p>
 
       {showProgress ? (
-        <div className="space-y-2 rounded-lg border border-line bg-surface p-3">
+        <div className="space-y-2.5">
           <div className="flex items-center gap-3 text-sm">
             <span className="min-w-0 flex-1 truncate text-ink-muted">{progressText(run)}</span>
             <RunControls run={run} />
           </div>
           <ProgressBar {...run.progress} />
         </div>
-      ) : null}
+      ) : (
+        <p className="text-xs leading-relaxed text-ink-faint">
+          Cached takes are never regenerated. Re-roll a single chunk from its row in Audition.
+        </p>
+      )}
 
       {run.notice ? (
         <div
@@ -126,44 +129,70 @@ export function GeneratePanel(p: GenerateProps) {
   );
 }
 
-function ModeButton({
-  icon,
-  label,
-  option,
-  primary,
-  disabled,
+function Count({ n }: { n: number }) {
+  return <span className="font-mono text-[11px] text-ink-faint tabular">{n}</span>;
+}
+
+function GhostButton({
+  children,
   onClick,
+  disabled,
+  tone,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  option: ModeOption;
-  primary?: boolean;
-  disabled: boolean;
+  children: React.ReactNode;
   onClick: () => void;
+  disabled: boolean;
+  tone?: "error";
 }) {
-  const meta =
-    option.credits < 0
-      ? `${option.jobs} ${option.jobs === 1 ? "take" : "takes"}`
-      : option.jobs === 0
-        ? "All cached"
-        : `${option.jobs} takes · ${option.credits.toLocaleString()} credits`;
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-lg border px-4 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
-        primary
-          ? "border-brass bg-brass text-brass-ink hover:bg-brass-strong disabled:hover:bg-brass"
-          : "border-line bg-surface text-ink hover:border-line-strong hover:bg-surface-2"
+      className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-lg border px-4 text-sm whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none ${
+        tone === "error"
+          ? "border-error/50 text-error hover:bg-error-dim"
+          : "border-line text-ink hover:border-line-strong hover:bg-surface-2"
       }`}
     >
-      <span className="flex items-center gap-2 text-sm font-medium">
-        {icon}
-        {label}
-      </span>
-      <span className={`font-mono text-[11px] ${primary ? "text-brass-ink/75" : "text-ink-muted"}`}>{meta}</span>
+      {children}
     </button>
+  );
+}
+
+/** Estimated spend for "Generate all" drawn against what's left on the account. */
+function CreditGauge({ estimate, jobs, remaining }: { estimate: number; jobs: number; remaining: number | null }) {
+  if (jobs === 0) {
+    return (
+      <p className="flex items-baseline gap-2 text-sm text-ink-muted">
+        <span className="font-display text-2xl text-done">All takes generated.</span>
+        <span className="font-mono text-[11px] text-ink-faint">
+          {remaining == null ? "" : `${remaining.toLocaleString()} credits left`}
+        </span>
+      </p>
+    );
+  }
+  const share = remaining && remaining > 0 ? estimate / remaining : estimate > 0 && remaining === 0 ? 1 : 0;
+  const heavy = remaining != null && share > 0.8;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm text-ink-muted">
+          <span className={`font-display text-2xl tabular ${heavy ? "text-warn" : "text-ink"}`}>{estimate.toLocaleString()}</span>{" "}
+          credits for {jobs} {jobs === 1 ? "take" : "takes"}
+        </p>
+        <p className="font-mono text-[11px] text-ink-faint tabular">
+          {remaining == null ? "balance unknown" : `of ${remaining.toLocaleString()} left`}
+        </p>
+      </div>
+      <div className="relative mt-2.5 h-[5px] overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${heavy ? "bg-warn" : "bg-brass/80"}`}
+          style={{ width: `${Math.min(100, share * 100)}%` }}
+        />
+        <span className="absolute inset-y-0 left-[80%] w-px bg-ink-faint/60" title="80% of remaining" />
+      </div>
+    </div>
   );
 }
 

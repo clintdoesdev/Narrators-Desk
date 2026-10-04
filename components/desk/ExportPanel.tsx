@@ -5,6 +5,7 @@ import { Download, Loader2 } from "lucide-react";
 import { buildZip, planExport, type ExportMode, type ExportTake } from "@/lib/export";
 import type { Chunk } from "@/lib/types";
 import type { TakeView } from "./useTakes";
+import { Empty } from "./ValidatePanel";
 
 const MODES: { id: ExportMode; label: string; hint: string }[] = [
   { id: "both", label: "Both", hint: "All takes plus selects" },
@@ -73,24 +74,21 @@ export function ExportPanel({
   }
 
   if (!video || chunks.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-line px-4 py-6 text-sm text-ink-muted">
-        Export becomes available once the script has a video slug and generated takes.
-      </p>
-    );
+    return <Empty>Export opens up once the script has a video slug and some generated takes.</Empty>;
   }
 
   return (
     <div className="space-y-4">
       <fieldset>
         <legend className="sr-only">Export contents</legend>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 rounded-lg bg-surface p-1 ring-1 ring-line ring-inset">
           {MODES.map((m) => (
             <label
               key={m.id}
-              className={`flex min-h-14 cursor-pointer flex-col justify-center rounded-lg border px-3 py-2 transition-colors ${
-                mode === m.id ? "border-brass bg-brass-dim" : "border-line bg-surface hover:border-line-strong"
+              className={`flex h-11 cursor-pointer items-center justify-center rounded-md px-2 text-center text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brass ${
+                mode === m.id ? "bg-surface-3 text-ink shadow-sm" : "text-ink-muted hover:text-ink"
               }`}
+              title={m.hint}
             >
               <input
                 type="radio"
@@ -100,20 +98,33 @@ export function ExportPanel({
                 onChange={() => setMode(m.id)}
                 className="sr-only"
               />
-              <span className={`text-sm font-medium ${mode === m.id ? "text-brass-strong" : "text-ink"}`}>{m.label}</span>
-              <span className="hidden text-[11px] text-ink-muted sm:block">{m.hint}</span>
+              {m.label}
             </label>
           ))}
         </div>
       </fieldset>
 
-      <div className="rounded-lg border border-line bg-surface p-3 font-mono text-[12px] leading-relaxed text-ink-muted">
+      <div className="font-mono text-[12px] leading-[1.9] text-ink-muted">
         <p className="break-all text-ink">{video}.zip</p>
-        <p className="pl-3">└── {video}/</p>
-        {mode !== "selects" ? <p className="pl-9">takes/ <span className="text-ink-faint">{plan?.takeCount ?? 0} files</span></p> : null}
-        {mode !== "all" ? <p className="pl-9">selects/ <span className="text-ink-faint">{plan?.selectCount ?? 0} files</span></p> : null}
-        <p className="pl-9">manifest.csv</p>
-        <p className="pl-9">script_used.txt</p>
+        <Tree depth={0} last>
+          {video}/
+        </Tree>
+        {mode !== "selects" ? (
+          <Tree depth={1} last={false}>
+            takes/ <span className="text-ink-faint">· {plan?.takeCount ?? 0} mp3</span>
+          </Tree>
+        ) : null}
+        {mode !== "all" ? (
+          <Tree depth={1} last={false}>
+            selects/ <span className="text-ink-faint">· {plan?.selectCount ?? 0} mp3</span>
+          </Tree>
+        ) : null}
+        <Tree depth={1} last={false}>
+          manifest.csv
+        </Tree>
+        <Tree depth={1} last>
+          script_used.txt
+        </Tree>
       </div>
 
       {mode !== "all" && missingPicks > 0 ? (
@@ -126,7 +137,7 @@ export function ExportPanel({
         type="button"
         onClick={download}
         disabled={disabled || busy || audioFiles === 0}
-        className="relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-lg bg-brass text-sm font-medium text-brass-ink transition-colors hover:bg-brass-strong disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint sm:w-auto sm:px-6"
+        className="relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-lg bg-brass text-sm font-medium text-brass-ink shadow-[0_1px_0_rgb(255_255_255/0.15)_inset,0_8px_24px_-12px_rgb(196_154_88/0.6)] transition-colors hover:bg-brass-strong disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-ink-faint disabled:shadow-none"
       >
         {busy ? (
           <span
@@ -153,5 +164,14 @@ export function ExportPanel({
         </p>
       ) : null}
     </div>
+  );
+}
+
+function Tree({ children, depth, last }: { children: React.ReactNode; depth: number; last: boolean }) {
+  return (
+    <p className="whitespace-nowrap" style={{ paddingLeft: `${depth * 1.25}rem` }}>
+      <span className="text-line-strong">{last ? "└─ " : "├─ "}</span>
+      {children}
+    </p>
   );
 }

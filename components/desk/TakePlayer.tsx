@@ -104,13 +104,13 @@ export function TakePlayer({
 
   return (
     <div
-      className={`flex min-w-0 items-center gap-2 rounded-lg border py-1 pr-1 pl-1 transition-colors duration-300 ${
+      className={`group relative flex h-12 min-w-0 items-center overflow-hidden rounded-lg ring-1 transition-[background-color,box-shadow] duration-300 ring-inset ${
         picked
-          ? "border-brass bg-brass-dim/60"
+          ? "bg-brass-dim/70 ring-brass/80"
           : active
-            ? "border-line-strong bg-surface-2"
-            : "border-line bg-surface"
-      } ${fresh ? "" : "opacity-55"}`}
+            ? "bg-surface-2 ring-line-strong"
+            : "bg-surface ring-line hover:ring-line-strong"
+      } ${fresh ? "" : "opacity-50"}`}
       title={`Take ${take} · seed ${seed}${fresh ? "" : " · stale (script changed)"}`}
     >
       <audio
@@ -129,33 +129,25 @@ export function TakePlayer({
         onClick={toggle}
         onFocus={onFocus}
         aria-label={`${isPlaying ? "Pause" : "Play"} take ${take}`}
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors ${
-          isPlaying ? "bg-brass text-brass-ink" : "bg-surface-3 text-ink hover:bg-line-strong"
-        }`}
+        className="flex h-12 w-11 shrink-0 items-center justify-center"
       >
-        {isPlaying ? <Pause className="h-4 w-4" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />}
-      </button>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2 font-mono text-[11px] text-ink-muted">
-          <span className="text-ink">
-            t{take}
-            {fresh ? null : <span className="ml-1.5 text-warn">stale</span>}
-          </span>
-          <span className="tabular-nums">
-            {fmt(time)} / {fmt(duration, true)}
-          </span>
-        </div>
-        <div
-          className="relative mt-1.5 h-4 cursor-pointer touch-none"
-          onPointerDown={seek}
-          role="presentation"
+        <span
+          className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+            isPlaying ? "bg-brass text-brass-ink" : "bg-surface-3 text-ink group-hover:bg-line-strong"
+          }`}
         >
-          <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-surface-3" />
-          <div
-            className="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-brass"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+          {isPlaying ? (
+            <Pause className="h-3.5 w-3.5" aria-hidden="true" />
+          ) : (
+            <Play className="h-3.5 w-3.5 translate-x-px" aria-hidden="true" />
+          )}
+        </span>
+      </button>
+      <div className="flex min-w-0 flex-1 items-baseline gap-2 pr-1 font-mono text-[11px]">
+        <span className={picked ? "text-brass-strong" : "text-ink"}>t{take}</span>
+        <span className="truncate text-ink-faint tabular">
+          {fresh ? (isPlaying || time > 0 ? fmt(time) : fmt(duration, true)) : "stale"}
+        </span>
       </div>
       <button
         type="button"
@@ -163,14 +155,25 @@ export function TakePlayer({
         disabled={!fresh}
         aria-pressed={picked}
         aria-label={picked ? `Take ${take} is picked. Unpick` : `Pick take ${take}`}
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-          picked
-            ? "border-brass bg-brass text-brass-ink"
-            : "border-line text-ink-faint hover:border-brass hover:text-brass"
-        }`}
+        className="flex h-12 w-11 shrink-0 items-center justify-center disabled:cursor-not-allowed"
       >
-        <Check className="h-4 w-4" aria-hidden="true" />
+        <span
+          className={`flex h-6 w-6 items-center justify-center rounded-full border transition-colors ${
+            picked
+              ? "border-brass bg-brass text-brass-ink"
+              : "border-line-strong text-transparent group-hover:text-ink-faint hover:border-brass hover:!text-brass"
+          }`}
+        >
+          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+        </span>
       </button>
+      <div
+        className="absolute inset-x-0 bottom-0 h-[2px] cursor-pointer touch-none"
+        onPointerDown={seek}
+        role="presentation"
+      >
+        <div className="h-full bg-brass transition-[width] duration-150 ease-linear" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }

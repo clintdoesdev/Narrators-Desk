@@ -60,6 +60,25 @@ body {
   color: var(--ink);
 }
 
+/* A faint warm lamp glow at the top of the desk. */
+body {
+  background-image: radial-gradient(120% 60% at 50% -10%, rgb(196 154 88 / 0.07), transparent 60%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Narration copy: serif reading face at text optical size. */
+.narration {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-variation-settings: "SOFT" 50;
+  letter-spacing: 0.002em;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 body {
   font-family: var(--font-sans);
   overflow-x: hidden;

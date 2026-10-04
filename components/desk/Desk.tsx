@@ -218,6 +218,7 @@ export function Desk() {
         "Retry failed takes",
       ),
     onClearStale: () => void takes.clearStale(),
+    remaining: usage.remaining,
   };
 
   const pendingCost = pending ? jobsCredits(pending.jobs, perChar) : null;
@@ -225,9 +226,10 @@ export function Desk() {
   return (
     <div className="min-h-dvh">
       <Header video={video} credits={usage.view} online={online} />
-      <main className="mx-auto max-w-6xl space-y-10 px-4 pt-6 pb-36 lg:px-6 lg:pb-16">
-        <section className="space-y-4" aria-labelledby="s-script">
-          <SectionLabel num="01" label="Script" id="s-script" />
+      <main className="mx-auto max-w-7xl px-4 pt-7 pb-36 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12 lg:px-8 lg:pt-10 lg:pb-20">
+        <div className="space-y-12 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:pb-4">
+        <section className="space-y-5" aria-labelledby="s-script">
+          <SectionLabel num="01" label="Script" id="s-script" aside={video ? <span className="sm:hidden">{video}</span> : null} />
           {hydrated ? (
             <ScriptEditor ref={editor} value={script} onChange={setScript} onLoadExample={() => setScript(EXAMPLE_SCRIPT)} />
           ) : (
@@ -235,7 +237,7 @@ export function Desk() {
           )}
         </section>
 
-        <section className="space-y-4" aria-labelledby="s-validate">
+        <section className="space-y-5" aria-labelledby="s-validate">
           <SectionLabel num="02" label="Validate" id="s-validate" />
           <ValidatePanel
             summary={summary}
@@ -246,8 +248,11 @@ export function Desk() {
             onJump={jump}
           />
         </section>
+        </div>
 
-        <section className="space-y-4" aria-labelledby="s-generate">
+        <div className="mt-12 space-y-14 lg:mt-0">
+
+        <section className="space-y-5" aria-labelledby="s-generate">
           <SectionLabel num="03" label="Generate" id="s-generate" />
           {takes.error ? <p className="text-sm text-error">{takes.error}</p> : null}
           {usage.view.state === "error" ? (
@@ -258,8 +263,13 @@ export function Desk() {
           <GeneratePanel {...generateProps} />
         </section>
 
-        <section className="space-y-4" aria-labelledby="s-audition">
-          <SectionLabel num="04" label="Audition" id="s-audition" />
+        <section className="space-y-5" aria-labelledby="s-audition">
+          <SectionLabel
+            num="04"
+            label="Audition"
+            id="s-audition"
+            aside={chunks.length ? `${Object.keys(takes.picks).length}/${chunks.length} picked` : null}
+          />
           {takes.loading ? (
             <p className="text-sm text-ink-muted">Loading cached takes from this device…</p>
           ) : (
@@ -278,7 +288,7 @@ export function Desk() {
           )}
         </section>
 
-        <section className="space-y-4" aria-labelledby="s-export">
+        <section className="space-y-5" aria-labelledby="s-export">
           <SectionLabel num="05" label="Export" id="s-export" />
           <ExportPanel
             video={video}
@@ -289,9 +299,16 @@ export function Desk() {
             disabled={run.state === "running" || run.state === "paused"}
           />
         </section>
+        </div>
       </main>
 
-      <RunBar {...generateProps} visible={chunks.length > 0} />
+      <RunBar
+        {...generateProps}
+        visible={
+          chunks.length > 0 &&
+          (run.state === "running" || run.state === "paused" || modeCounts.all.jobs > 0 || run.failed.length > 0)
+        }
+      />
 
       {pending && pendingCost ? (
         <ConfirmSheet

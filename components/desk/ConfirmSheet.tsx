@@ -59,6 +59,7 @@ export function ConfirmSheet({
         aria-labelledby="confirm-title"
         className="relative w-full max-w-md rounded-t-2xl border border-line bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl"
       >
+        <span className="mx-auto -mt-2 mb-3 block h-1 w-10 rounded-full bg-line-strong sm:hidden" aria-hidden="true" />
         <div className="mb-4 flex items-start gap-3">
           <h2 id="confirm-title" className="font-display text-xl leading-tight">
             {title}
@@ -75,14 +76,22 @@ export function ConfirmSheet({
 
         {children}
 
-        <dl className="divide-y divide-line rounded-lg border border-line text-sm">
+        <p className="mb-4">
+          <span className={`font-display text-4xl tabular ${heavy ? "text-warn" : "text-brass-strong"}`}>
+            {credits.toLocaleString()}
+          </span>
+          <span className="ml-2 text-sm text-ink-muted">estimated credits</span>
+        </p>
+        <dl className="divide-y divide-line border-y border-line text-sm">
           <Row label="Takes to generate" value={jobCount.toLocaleString()} />
           <Row label="Characters (chars × takes)" value={chars.toLocaleString()} />
-          <Row label="Estimated credits" value={credits.toLocaleString()} strong />
           <Row
             label="Remaining credits"
             value={remainingLoading ? "Checking…" : remaining == null ? "Unavailable" : remaining.toLocaleString()}
           />
+          {remaining != null && !remainingLoading ? (
+            <Row label="Left after this run" value={Math.max(0, remaining - credits).toLocaleString()} />
+          ) : null}
         </dl>
 
         {heavy ? (
@@ -131,11 +140,11 @@ export function ConfirmSheet({
   );
 }
 
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 py-2.5">
       <dt className="text-ink-muted">{label}</dt>
-      <dd className={`font-mono tabular-nums ${strong ? "text-brass-strong" : "text-ink"}`}>{value}</dd>
+      <dd className="font-mono text-ink tabular-nums">{value}</dd>
     </div>
   );
 }
