@@ -53,7 +53,10 @@ export function useRun(video: string | null, onTake: (rec: TakeRecord) => void, 
       const r = new Runner(
         list,
         async (job, { signal, onRetry }) => {
-          const blob = await requestTake({ text: job.text, model: job.model, seed: job.seed }, { signal, onRetry });
+          const blob = await requestTake(
+            { text: job.text, model: job.model, seed: job.seed, voiceId: job.voiceId },
+            { signal, onRetry },
+          );
           const value = { blob, seed: job.seed, model: job.model, createdAt: Date.now(), textHash: job.textHash };
           await putTake(runVideo, job.chunkId, job.take, value);
           onTake({ ...value, chunkId: job.chunkId, take: job.take, key: takeKey(runVideo, job.chunkId, job.take) });

@@ -3,9 +3,9 @@ import type { Chunk, Issue, Model, ParseResult, Story } from "./types";
 export const MAX_CHUNK_CHARS = 1500;
 export const WARN_CHUNK_CHARS = 600;
 export const DEFAULT_TAKES_V2 = 2;
-export const DEFAULT_TAKES_V3 = 4;
+export const DEFAULT_TAKES_V3 = 2;
 export const MIN_TAKES = 1;
-export const MAX_TAKES = 6;
+export const MAX_TAKES = 2;
 
 const HEADER_RE = /^@@(VIDEO|TAKES_V2|TAKES_V3):\s*(.+)$/;
 const SLUG_RE = /^[a-z0-9-]+$/;

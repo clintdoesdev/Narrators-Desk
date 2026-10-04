@@ -72,7 +72,7 @@ can paste a full production script with `[VISUAL]`, `[SKIT]`, `[SPONSOR]` and
 ```
 @@VIDEO: worst-jobs-medieval
 @@TAKES_V2: 2
-@@TAKES_V3: 4
+@@TAKES_V3: 2
 
 == S0: Cold Open ==
 [AUDIO — v2]
@@ -93,7 +93,7 @@ The floorboards groan. [gasps] And then... they give way.
 | Element | Rule |
 | --- | --- |
 | `@@VIDEO: slug` | Required. Lowercase letters, digits and hyphens only. Used for file names and the cache key. |
-| `@@TAKES_V2` / `@@TAKES_V3` | Takes per chunk. Defaults are 2 and 4, clamped to 1–6. |
+| `@@TAKES_V2` / `@@TAKES_V3` | Takes per chunk. Default 2, and never more than 2 (1 is allowed). |
 | `== S1: Title ==` | Story header. Chunk numbers restart at 001 for each story. |
 | `[AUDIO — v2]`, `[AUDIO — v3]`, `[AUDIO — v3 — CLIMAX]` | Starts a narration block. Em dash, en dash and hyphen all work. |
 | Block end | The next line starting with an UPPERCASE tag (`[VISUAL]`, `[SKIT]`, `[AUDIO …]`…), a story header, or the end of the file. |
@@ -118,7 +118,7 @@ Tap any issue to jump to its line in the editor.
 
 - **Generate climax only** and **Generate all** fill each chunk up to its take count
   and skip takes that are already cached and fresh. **Re-roll** (on a chunk row)
-  adds 1–6 new takes without replacing existing ones. **Retry failed** re-runs
+  replaces that chunk's takes with fresh ones. Each chunk keeps two takes at most. **Retry failed** re-runs
   only the takes that failed.
 - Every run opens a confirm sheet first. It shows the take count, characters
   (chars × takes), estimated credits, and remaining credits. If the estimate is
@@ -143,7 +143,7 @@ Tap any issue to jump to its line in the editor.
   it between v2 and v3), its old takes are marked **stale**. They stay playable
   but can't be picked or exported, and the next run regenerates them.
   **Clear stale takes** frees the space.
-- Keyboard: `j`/`k` next/previous chunk, `space` play/pause, `1`–`6` pick a take.
+- Keyboard: `j`/`k` next/previous chunk, `space` play/pause, `1`/`2` pick a take.
   Filters: All, Climax, v3, Failed, Unpicked.
 - Export builds `{video}.zip` in the browser: `takes/`, `selects/` (picked takes
   only), `manifest.csv` and `script_used.txt`. Choose All takes, Selects only, or
@@ -159,11 +159,25 @@ tags are sent as text, so they count too.
 estimate = Σ over jobs ( chunk.chars × credits_per_char(model) )
 ```
 
-For a full run, that's `Σ chars × takes`. The example script has 343 characters,
-4 v2 chunks × 2 takes and 2 v3 chunks × 4 takes, for 856 credits. The per-model
+For a full run, that's `Σ chars × takes`. The example script has 343 characters
+across 6 chunks at 2 takes each, for 686 credits. The per-model
 rate lives in `lib/voice-config.ts` (`creditsPerChar`). Update it if your plan
 bills a model differently. Remaining credits come from `GET /api/usage`
-(`character_limit − character_count`).
+(`character_limit − character_count`), shown in the sticky bar at the top.
+
+**If credits show as "unavailable":** ElevenLabs API keys are scoped. In
+ElevenLabs, open **Developers → API Keys**, edit your key, and enable
+**User → Read** (for credits) and **Voices → Read** (for the voice picker),
+alongside **Text to Speech**. The app tells you which permission is missing.
+
+## Choosing a voice
+
+The Generate section shows the current voice. Tap **Change** to pick another
+voice from your ElevenLabs account, with previews; your own voices are listed
+first, then ElevenLabs' premade voices. `VOICE_ID` is the default and is never
+sent to the browser (it appears as "default"). The choice is remembered on the
+device. Switching voice marks existing takes stale, and the next run
+regenerates them in the new voice.
 
 ## Voice settings
 

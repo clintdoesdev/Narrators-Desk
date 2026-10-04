@@ -11,6 +11,7 @@ export function ValidatePanel({
   remaining,
   hasScript,
   onJump,
+  creditsError,
 }: {
   summary: ScriptSummary;
   errors: Issue[];
@@ -18,6 +19,7 @@ export function ValidatePanel({
   remaining: number | null;
   hasScript: boolean;
   onJump: (line: number) => void;
+  creditsError?: string | null;
 }) {
   if (!hasScript) {
     return <Empty>Paste a script above. It&rsquo;s checked here before a single credit is spent.</Empty>;
@@ -36,6 +38,9 @@ export function ValidatePanel({
         <Stat label="Remaining" value={remaining == null ? "—" : remaining} tone={over ? "error" : undefined} />
       </dl>
 
+      {creditsError ? (
+        <p className="t-caption mx-auto max-w-xl text-center text-error">Remaining credits unavailable. {creditsError}</p>
+      ) : null}
       {errors.length === 0 && warnings.length === 0 ? (
         <p className="t-body flex items-center justify-center gap-2 text-success">
           <CircleCheck className="h-5 w-5" aria-hidden="true" /> Clean script. Ready to generate.

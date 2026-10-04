@@ -3,6 +3,7 @@ import { SESSION_COOKIE, createSessionToken } from "@/lib/auth";
 import { POST as tts } from "@/app/api/tts/route";
 import { GET as usage } from "@/app/api/usage/route";
 import { POST as login } from "@/app/api/login/route";
+import { GET as voicesRoute } from "@/app/api/voices/route";
 
 const KEY = "sk_test_supersecretkey_1234567890";
 const VOICE = "voice_ABCDEFGHIJ123";
@@ -193,5 +194,97 @@ describe("POST /api/login", () => {
     const res = await login(req("nope", "10.0.0.2"));
     expect(res.status).toBe(401);
     expect(res.headers.get("set-cookie")).toBeNull();
+  });
+});
+
+describe("voice selection in /api/tts", () => {
+  it("uses the env voice by default and for \"default\"", async () => {
+    const fetchMock = vi.fn(async () => new Response(new Uint8Array([1])));
+    vi.stubGlobal("fetch", fetchMock);
+    await tts(ttsReq({ text: "Hi", model: "v2", seed: 1, voiceId: "default" }));
+    expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toContain(`/text-to-speech/${VOICE}?`);
+  });
+
+  it("uses a chosen voice", async () => {
+    const fetchMock = vi.fn(async () => new Response(new Uint8Array([1])));
+    vi.stubGlobal("fetch", fetchMock);
+    await tts(ttsReq({ text: "Hi", model: "v3", seed: 1, voiceId: "pNInz6obpgDQGcFmaJgB" }));
+    expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toContain("/text-to-speech/pNInz6obpgDQGcFmaJgB?");
+  });
+
+  it("rejects a malformed voice id", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const res = await tts(ttsReq({ text: "Hi", model: "v3", seed: 1, voiceId: "../../v1/user" }));
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /api/voices", () => {
+  it("lists voices with the env voice masked as default and first", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              voices: [
+                { voice_id: "premadeVoice01", name: "Adam", category: "premade", preview_url: "https://x/adam.mp3", labels: { accent: "american" } },
+                { voice_id: VOICE, name: "Clint Narrator", category: "cloned", preview_url: `https://x/${VOICE}/p.mp3` },
+                { voice_id: "clonedVoice002", name: "Backup", category: "professional" },
+              ],
+            }),
+          ),
+      ),
+    );
+    const res = await voicesRoute(new Request("http://localhost/api/voices", { headers: { cookie } }));
+    const body = await res.json();
+    expect(body.voices.map((v: { id: string; name: string }) => [v.id, v.name])).toEqual([
+      ["default", "Clint Narrator"],
+      ["clonedVoice002", "Backup"],
+      ["premadeVoice01", "Adam"],
+    ]);
+    expect(body.voices[2].description).toBe("american");
+    expect(JSON.stringify(body)).not.toContain(VOICE);
+  });
+
+  it("explains a missing API key permission", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({ detail: { status: "missing_permissions", message: "The API key you used is missing the permission voices_read to execute this operation." } }),
+            { status: 401 },
+          ),
+      ),
+    );
+    const res = await voicesRoute(new Request("http://localhost/api/voices", { headers: { cookie } }));
+    const body = await res.json();
+    expect(body.error).toBe("missing_permission");
+    expect(body.detail).toMatch(/Voices → Read/);
+  });
+
+  it("requires a session", async () => {
+    expect((await voicesRoute(new Request("http://localhost/api/voices"))).status).toBe(401);
+  });
+});
+
+describe("GET /api/usage permission hint", () => {
+  it("tells you which permission to enable", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({ detail: { status: "missing_permissions", message: "The API key you used is missing the permission user_read to execute this operation." } }),
+            { status: 401 },
+          ),
+      ),
+    );
+    const res = await usage(new Request("http://localhost/api/usage", { headers: { cookie } }));
+    const body = await res.json();
+    expect(res.status).toBe(401);
+    expect(body.error).toBe("missing_permission");
+    expect(body.detail).toMatch(/User → Read/);
   });
 });

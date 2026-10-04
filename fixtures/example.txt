@@ -1,6 +1,6 @@
 @@VIDEO: worst-jobs-medieval
 @@TAKES_V2: 2
-@@TAKES_V3: 4
+@@TAKES_V3: 2
 
 == S0: Cold Open ==
 [AUDIO — v2]

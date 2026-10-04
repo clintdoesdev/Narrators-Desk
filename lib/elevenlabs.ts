@@ -69,3 +69,16 @@ export function defaultMessage(status: number): string {
   if (status >= 500) return "ElevenLabs had a server error.";
   return `ElevenLabs returned status ${status}.`;
 }
+
+/** Voice IDs are short alphanumeric strings. "default" means the env VOICE_ID. */
+export const VOICE_ID_RE = /^[A-Za-z0-9]{8,64}$/;
+
+/**
+ * ElevenLabs API keys are scoped. A key without the right permission gets a
+ * 401 whose detail names the missing permission; turn that into a fix-it hint.
+ */
+export function permissionHint(detail: string, what: "credits" | "voices"): string | null {
+  if (!/permission/i.test(detail)) return null;
+  const scope = what === "credits" ? "User → Read" : "Voices → Read";
+  return `Your ElevenLabs API key isn't allowed to read ${what}. In ElevenLabs, open Developers → API Keys, edit the key and enable "${scope}". (${detail})`;
+}

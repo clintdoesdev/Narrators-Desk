@@ -132,7 +132,7 @@ describe("randomSeed", () => {
 
 const script = `@@VIDEO: plan-test
 @@TAKES_V2: 2
-@@TAKES_V3: 3
+@@TAKES_V3: 2
 == S1: A ==
 [AUDIO — v2]
 One.
@@ -155,14 +155,13 @@ describe("planJobs", () => {
       "S1-002/t2",
       "S1-003/t1",
       "S1-003/t2",
-      "S1-003/t3",
     ]);
     expect(new Set(jobs.map((j) => j.seed)).size).toBe(jobs.length);
   });
 
   it("climax only", () => {
     const jobs = planJobs({ kind: "climax" }, chunks, [], seed);
-    expect(jobs.map((j) => j.key)).toEqual(["S1-003/t1", "S1-003/t2", "S1-003/t3"]);
+    expect(jobs.map((j) => j.key)).toEqual(["S1-003/t1", "S1-003/t2"]);
     expect(jobs[0]).toMatchObject({ model: "v3", text: "Three.", chars: 6, textHash: chunkHash(chunks[2]) });
   });
 
@@ -176,7 +175,6 @@ describe("planJobs", () => {
       "S1-002/t2",
       "S1-003/t1",
       "S1-003/t2",
-      "S1-003/t3",
     ]);
   });
 
@@ -185,11 +183,21 @@ describe("planJobs", () => {
     expect(planJobs({ kind: "all" }, chunks, existing, seed)).toEqual([]);
   });
 
-  it("re-roll adds new take numbers without replacing fresh ones", () => {
+  it("re-roll replaces the chunk's takes in place, never adding more", () => {
     const h = chunkHash(chunks[2]);
-    const existing = [1, 2, 3].map((take) => ({ chunkId: "S1-003", take, textHash: h }));
-    const jobs = planJobs({ kind: "reroll", chunkId: "S1-003", count: 2 }, chunks, existing, seed);
-    expect(jobs.map((j) => j.key)).toEqual(["S1-003/t4", "S1-003/t5"]);
+    const existing = [1, 2].map((take) => ({ chunkId: "S1-003", take, textHash: h }));
+    const jobs = planJobs({ kind: "reroll", chunkId: "S1-003" }, chunks, existing, seed);
+    expect(jobs.map((j) => j.key)).toEqual(["S1-003/t1", "S1-003/t2"]);
+    expect(jobs[0].seed).not.toBe(jobs[1].seed);
+  });
+
+  it("a different voice makes cached takes stale and is carried on each job", () => {
+    const existing = planJobs({ kind: "all" }, chunks, [], seed).map((j) => ({ chunkId: j.chunkId, take: j.take, textHash: j.textHash }));
+    expect(planJobs({ kind: "all" }, chunks, existing, seed)).toEqual([]);
+    const other = planJobs({ kind: "all" }, chunks, existing, seed, "abcVoice123");
+    expect(other).toHaveLength(6);
+    expect(other.every((j) => j.voiceId === "abcVoice123")).toBe(true);
+    expect(other[0].textHash).toBe(chunkHash(chunks[0], "abcVoice123"));
   });
 
   it("retry failed rebuilds only still-missing jobs", () => {
@@ -222,6 +230,7 @@ function makeJobs(count: number): Job[] {
     text: "x",
     textHash: "h",
     chars: 1,
+    voiceId: "default",
   }));
 }
 

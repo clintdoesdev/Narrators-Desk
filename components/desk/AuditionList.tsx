@@ -142,7 +142,7 @@ export function AuditionList({
         Takes stay on this device for 24 hours after they&rsquo;re generated. Export anything you want to keep.
       </p>
       <p className="t-fine hidden text-center text-ink-48 lg:block">
-        <Kbd>J</Kbd> <Kbd>K</Kbd> move between chunks · <Kbd>Space</Kbd> play · <Kbd>1</Kbd>–<Kbd>6</Kbd> pick a take
+        <Kbd>J</Kbd> <Kbd>K</Kbd> move between chunks · <Kbd>Space</Kbd> play · <Kbd>1</Kbd> <Kbd>2</Kbd> pick a take
       </p>
 
       {groups.length === 0 ? <Empty>Nothing matches this filter.</Empty> : null}

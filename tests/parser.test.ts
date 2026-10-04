@@ -16,7 +16,7 @@ describe("example fixture", () => {
     expect(r.errors).toEqual([]);
     expect(r.video).toBe("worst-jobs-medieval");
     expect(r.takesV2).toBe(2);
-    expect(r.takesV3).toBe(4);
+    expect(r.takesV3).toBe(2);
   });
 
   it("produces the expected chunks", () => {
@@ -30,7 +30,7 @@ describe("example fixture", () => {
     );
     expect(its.pauseAfter).toBeNull();
     expect(see.text).toBe("See, Richard had one of the most important jobs in the city. And one of the worst.");
-    expect(climax).toMatchObject({ model: "v3", climax: true, takes: 4, index: 4 });
+    expect(climax).toMatchObject({ model: "v3", climax: true, takes: 2, index: 4 });
     expect(climax.text).toBe("The floorboards groan. [gasps] And then... they give way.");
     expect(outro).toMatchObject({ model: "v3", climax: false, text: "So, yeah. [sighs] Go figure." });
     expect(outro.chars).toBe(outro.text.length);
@@ -59,21 +59,21 @@ describe("header", () => {
     expect(r.video).toBe("");
   });
 
-  it("defaults takes to 2 and 4", () => {
+  it("defaults takes to 2 for both models", () => {
     const r = parse("== S1: A ==\n[AUDIO — v2]\nOne.\n[AUDIO — v3 — CLIMAX]\nTwo.");
-    expect(r.chunks.map((c) => c.takes)).toEqual([2, 4]);
+    expect(r.chunks.map((c) => c.takes)).toEqual([2, 2]);
   });
 
-  it("clamps takes to 1–6", () => {
+  it("clamps takes to 1–2", () => {
     const r = parseScript("@@VIDEO: x\n@@TAKES_V2: 0\n@@TAKES_V3: 9\n== S1: A ==\n[AUDIO — v2]\nOne.\n[AUDIO — v3 — CLIMAX]\nTwo.");
     expect(r.takesV2).toBe(1);
-    expect(r.takesV3).toBe(6);
+    expect(r.takesV3).toBe(2);
     expect(r.warnings.length).toBeGreaterThanOrEqual(2);
   });
 
   it("falls back on non-numeric takes", () => {
     const r = parseScript("@@VIDEO: x\n@@TAKES_V3: lots\n");
-    expect(r.takesV3).toBe(4);
+    expect(r.takesV3).toBe(2);
     expect(msgs(r.warnings)).toMatch(/whole number/);
   });
 });
@@ -165,7 +165,7 @@ describe("block boundaries", () => {
   it("handles a pasted full script with VISUAL, SKIT and FACT-CHECK lines", () => {
     const script = [
       "@@VIDEO: plague-doctors",
-      "@@TAKES_V2: 3",
+      "@@TAKES_V2: 2",
       "Title ideas: The Beak, The Mask",
       "",
       "== S1: The Mask ==",
@@ -191,10 +191,10 @@ describe("block boundaries", () => {
     expect(r.errors).toEqual([]);
     expect(r.video).toBe("plague-doctors");
     expect(r.chunks.map((c) => [c.id, c.text, c.takes])).toEqual([
-      ["S1-001", "In sixteen fifty-six, a doctor walks into Rome wearing a bird mask.", 3],
-      ["S1-002", "Nobody laughs.", 3],
-      ["S1-003", "[whispers] The mask was full of herbs.", 4],
-      ["S1-004", "It didn't help. [sighs]", 4],
+      ["S1-001", "In sixteen fifty-six, a doctor walks into Rome wearing a bird mask.", 2],
+      ["S1-002", "Nobody laughs.", 2],
+      ["S1-003", "[whispers] The mask was full of herbs.", 2],
+      ["S1-004", "It didn't help. [sighs]", 2],
     ]);
   });
 });

@@ -29,7 +29,7 @@ export type TakesState = {
   clearStale: () => Promise<void>;
 };
 
-export function useTakes(video: string | null, chunks: Chunk[]): TakesState {
+export function useTakes(video: string | null, chunks: Chunk[], voice: string): TakesState {
   const [records, setRecords] = useState<TakeRecord[]>([]);
   const [rawPicks, setRawPicks] = useState<Record<string, number>>({});
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
@@ -80,20 +80,23 @@ export function useTakes(video: string | null, chunks: Chunk[]): TakesState {
 
   const current = useMemo(() => (loadedFor === video && video ? records : []), [loadedFor, video, records]);
 
-  const hashes = useMemo(() => new Map(chunks.map((c) => [c.id, chunkHash(c)])), [chunks]);
+  const hashes = useMemo(() => new Map(chunks.map((c) => [c.id, chunkHash(c, voice)])), [chunks, voice]);
+  // Takes are capped per chunk; slots above the cap (from older builds) are hidden.
+  const caps = useMemo(() => new Map(chunks.map((c) => [c.id, c.takes])), [chunks]);
+  const overCap = useCallback((r: TakeRecord) => r.take > (caps.get(r.chunkId) ?? 0), [caps]);
 
   const byChunk = useMemo(() => {
     const map = new Map<string, TakeView[]>();
     for (const r of current) {
       const h = hashes.get(r.chunkId);
-      if (h === undefined) continue; // orphaned: chunk no longer in script
+      if (h === undefined || overCap(r)) continue; // orphaned or above the take cap
       const list = map.get(r.chunkId) ?? [];
       list.push({ ...r, fresh: r.textHash === h });
       map.set(r.chunkId, list);
     }
     for (const list of map.values()) list.sort((a, b) => a.take - b.take);
     return map;
-  }, [current, hashes]);
+  }, [current, hashes, overCap]);
 
   const picks = useMemo(() => {
     const out: Record<string, number> = {};
@@ -104,8 +107,8 @@ export function useTakes(video: string | null, chunks: Chunk[]): TakesState {
   }, [rawPicks, byChunk, loadedFor, video]);
 
   const staleKeys = useMemo(
-    () => current.filter((r) => hashes.get(r.chunkId) !== r.textHash).map((r) => r.key),
-    [current, hashes],
+    () => current.filter((r) => hashes.get(r.chunkId) !== r.textHash || overCap(r)).map((r) => r.key),
+    [current, hashes, overCap],
   );
 
   const addTake = useCallback((rec: TakeRecord) => {

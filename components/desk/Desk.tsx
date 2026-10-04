@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Plus } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SectionLabel } from "@/components/SectionLabel";
 import { loadScript, saveScript } from "@/lib/cache";
@@ -21,6 +20,8 @@ import { useOnline } from "./useOnline";
 import { useRun } from "./useRun";
 import { useTakes } from "./useTakes";
 import { useUsage } from "./useUsage";
+import { useVoices } from "./useVoices";
+import { VoiceLine } from "./VoicePicker";
 
 const perChar = (m: Job["model"]) => VOICE_CONFIG[m].creditsPerChar;
 
@@ -35,6 +36,8 @@ export function Desk() {
   const [active, setActive] = useState<{ chunkId: string; take: number | null } | null>(null);
   const editor = useRef<ScriptEditorHandle>(null);
   const usage = useUsage();
+  const voices = useVoices();
+  const voiceId = voices.selected.id;
   const online = useOnline();
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export function Desk() {
     document.title = video ? `Narrator's Desk — ${video}` : "Narrator's Desk";
   }, [video]);
 
-  const takes = useTakes(video, chunks);
+  const takes = useTakes(video, chunks, voiceId);
   const refreshUsage = usage.refresh;
   const run = useRun(video, takes.addTake, () => void refreshUsage());
 
@@ -97,11 +100,11 @@ export function Desk() {
   // Counts for the mode buttons (seeds are irrelevant here).
   const modeCounts = useMemo(() => {
     const count = (mode: RunMode) => {
-      const jobs = planJobs(mode, chunks, existing, () => 0);
+      const jobs = planJobs(mode, chunks, existing, () => 0, voiceId);
       return { jobs: jobs.length, credits: jobsCredits(jobs, perChar).credits };
     };
     return { climax: count({ kind: "climax" }), all: count({ kind: "all" }) };
-  }, [chunks, existing]);
+  }, [chunks, existing, voiceId]);
 
   const blockedReason = !script.trim()
     ? "Paste a script to start."
@@ -119,30 +122,26 @@ export function Desk() {
 
   const openConfirm = useCallback(
     (mode: RunMode, title: string) => {
-      setPending({ mode, title, jobs: planJobs(mode, chunks, existing) });
+      setPending({ mode, title, jobs: planJobs(mode, chunks, existing, undefined, voiceId) });
       setCheckingCredits(true);
       void refreshUsage().finally(() => setCheckingCredits(false));
     },
-    [chunks, existing, refreshUsage],
+    [chunks, existing, refreshUsage, voiceId],
   );
 
   const openReroll = useCallback(
     (chunkId: string) => {
       const c = chunks.find((x) => x.id === chunkId);
       if (!c) return;
-      openConfirm({ kind: "reroll", chunkId, count: c.takes }, `Re-roll ${chunkId}`);
+      openConfirm({ kind: "reroll", chunkId }, `Re-roll ${chunkId}`);
     },
     [chunks, openConfirm],
   );
 
-  const setRerollCount = (count: number) => {
-    if (!pending || pending.mode.kind !== "reroll") return;
-    const mode: RunMode = { ...pending.mode, count: Math.min(6, Math.max(1, count)) };
-    setPending({ ...pending, mode, jobs: planJobs(mode, chunks, existing) });
-  };
-
   const confirm = () => {
     if (!pending) return;
+    // A re-roll replaces the chunk's takes, so its old pick no longer applies.
+    if (pending.mode.kind === "reroll") takes.setPick(pending.mode.chunkId, null);
     run.start(pending.jobs);
     setPending(null);
   };
@@ -160,7 +159,7 @@ export function Desk() {
   const onPick = useCallback((chunkId: string, take: number) => setPick(chunkId, take), [setPick]);
   const onActivate = useCallback((chunkId: string, take: number | null) => setActive({ chunkId, take }), []);
 
-  // Keyboard: j/k move between chunks, space plays the focused take, 1–6 pick.
+  // Keyboard: j/k move between chunks, space plays the focused take, 1–2 pick.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (pending || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -190,7 +189,7 @@ export function Desk() {
         if (active?.take == null) setActive({ chunkId: m.chunk.id, take });
         return;
       }
-      if (/^[1-6]$/.test(e.key)) {
+      if (/^[1-2]$/.test(e.key)) {
         const take = Number(e.key);
         if (m.takes.some((t) => t.take === take && t.fresh)) {
           e.preventDefault();
@@ -263,6 +262,7 @@ export function Desk() {
               remaining={usage.remaining}
               hasScript={script.trim().length > 0}
               onJump={jump}
+              creditsError={usage.view.state === "error" ? usage.view.message : null}
             />
           </div>
         </Tile>
@@ -275,7 +275,10 @@ export function Desk() {
               <span className="text-error-on-dark">Credits unavailable.</span> {usage.view.message}
             </p>
           ) : null}
-          <div className="mt-12">
+          <div className="mt-6">
+            <VoiceLine voices={voices} disabled={runActive} />
+          </div>
+          <div className="mt-8">
             <GeneratePanel {...generateProps} />
           </div>
         </Tile>
@@ -351,28 +354,9 @@ export function Desk() {
           onClose={closeConfirm}
         >
           {pending.mode.kind === "reroll" ? (
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <span className="t-body text-ink">New takes to add</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  aria-label="Fewer takes"
-                  onClick={() => setRerollCount((pending.mode as { count: number }).count - 1)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-chip text-ink transition-transform active:scale-95"
-                >
-                  <Minus className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <span className="t-tagline w-8 text-center tabular">{pending.mode.count}</span>
-                <button
-                  type="button"
-                  aria-label="More takes"
-                  onClick={() => setRerollCount((pending.mode as { count: number }).count + 1)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-chip text-ink transition-transform active:scale-95"
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
+            <p className="t-caption mb-4 text-ink-48">
+              Replaces this chunk&rsquo;s takes with fresh ones. Each chunk keeps two takes at most.
+            </p>
           ) : null}
         </ConfirmSheet>
       ) : null}

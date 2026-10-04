@@ -96,9 +96,9 @@ function Credits({ credits }: { credits: CreditsView }) {
   }
   if (credits.state === "error") {
     return (
-      <span className="t-caption whitespace-nowrap text-error" title={credits.message}>
-        Credits n/a
-      </span>
+      <a href="#generate" className="t-caption whitespace-nowrap text-error underline-offset-2 hover:underline" title={credits.message}>
+        Credits unavailable
+      </a>
     );
   }
   return (
@@ -106,7 +106,7 @@ function Credits({ credits }: { credits: CreditsView }) {
       className="t-caption whitespace-nowrap text-ink-48"
       title={`${credits.remaining.toLocaleString()} of ${credits.limit.toLocaleString()} credits left`}
     >
-      <span className="text-ink tabular">{credits.remaining.toLocaleString()}</span> left
+      <span className="t-caption-strong text-ink tabular">{credits.remaining.toLocaleString()}</span> credits left
     </span>
   );
 }

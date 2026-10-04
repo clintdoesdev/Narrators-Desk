@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthed } from "@/lib/auth";
-import { ELEVEN_BASE, readElevenEnv, safeUpstreamDetail } from "@/lib/elevenlabs";
+import { ELEVEN_BASE, permissionHint, readElevenEnv, safeUpstreamDetail } from "@/lib/elevenlabs";
 
 export type UsageResponse = {
   character_count: number;
@@ -38,8 +38,10 @@ export async function GET(request: Request) {
 
   if (!upstream.ok) {
     const raw = await upstream.text().catch(() => "");
+    const detail = safeUpstreamDetail(raw, env, upstream.status);
+    const hint = permissionHint(detail, "credits");
     return NextResponse.json(
-      { error: "elevenlabs_error", detail: safeUpstreamDetail(raw, env, upstream.status) },
+      { error: hint ? "missing_permission" : "elevenlabs_error", detail: hint ?? detail },
       { status: upstream.status, headers: noStore },
     );
   }

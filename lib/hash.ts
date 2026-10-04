@@ -14,7 +14,14 @@ export function cyrb53(str: string, seed = 0): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 
-/** Hash of what actually gets sent: changing text or model makes old takes stale. */
-export function chunkHash(chunk: { model: Model; text: string }): string {
-  return cyrb53(`${chunk.model}\u0000${chunk.text}`);
+export const DEFAULT_VOICE = "default";
+
+/**
+ * Hash of what actually gets sent: changing text, model or voice makes old
+ * takes stale. The default voice hashes exactly as older builds did, so
+ * existing caches stay fresh.
+ */
+export function chunkHash(chunk: { model: Model; text: string }, voice: string = DEFAULT_VOICE): string {
+  const base = `${chunk.model}\u0000${chunk.text}`;
+  return cyrb53(voice === DEFAULT_VOICE ? base : `${base}\u0000${voice}`);
 }

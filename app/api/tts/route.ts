@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isAuthed } from "@/lib/auth";
-import { ELEVEN_BASE, readElevenEnv, safeUpstreamDetail } from "@/lib/elevenlabs";
+import { ELEVEN_BASE, VOICE_ID_RE, readElevenEnv, safeUpstreamDetail } from "@/lib/elevenlabs";
 import { MAX_CHUNK_CHARS } from "@/lib/parser";
 import { MAX_SEED, OUTPUT_FORMAT, VOICE_CONFIG } from "@/lib/voice-config";
 
@@ -11,6 +11,8 @@ const Body = z.object({
   text: z.string().min(1).max(MAX_CHUNK_CHARS),
   model: z.enum(["v2", "v3"]),
   seed: z.number().int().min(0).max(MAX_SEED),
+  // Omitted or "default" uses VOICE_ID from the environment.
+  voiceId: z.union([z.literal("default"), z.string().regex(VOICE_ID_RE)]).optional(),
 });
 
 function jsonError(status: number, error: string, detail: string, extra?: HeadersInit) {
@@ -32,7 +34,8 @@ export async function POST(request: Request) {
   }
 
   const cfg = VOICE_CONFIG[body.model];
-  const url = `${ELEVEN_BASE}/v1/text-to-speech/${encodeURIComponent(env.voiceId)}?output_format=${OUTPUT_FORMAT}`;
+  const voiceId = body.voiceId && body.voiceId !== "default" ? body.voiceId : env.voiceId;
+  const url = `${ELEVEN_BASE}/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${OUTPUT_FORMAT}`;
 
   let upstream: Response;
   try {

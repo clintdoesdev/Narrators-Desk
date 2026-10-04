@@ -1,4 +1,4 @@
-import { chunkHash } from "./hash";
+import { DEFAULT_VOICE, chunkHash } from "./hash";
 import type { Chunk, Model } from "./types";
 import { MAX_SEED } from "./voice-config";
 
@@ -79,7 +79,7 @@ export function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> 
   });
 }
 
-export type TtsRequest = { text: string; model: Model; seed: number };
+export type TtsRequest = { text: string; model: Model; seed: number; voiceId?: string };
 
 export type RetryOptions = {
   fetchFn?: typeof fetch;
@@ -142,6 +142,7 @@ export type Job = {
   text: string;
   textHash: string;
   chars: number;
+  voiceId: string;
 };
 
 export type ExistingTake = { chunkId: string; take: number; textHash: string };
@@ -149,7 +150,7 @@ export type ExistingTake = { chunkId: string; take: number; textHash: string };
 export type RunMode =
   | { kind: "climax" }
   | { kind: "all" }
-  | { kind: "reroll"; chunkId: string; count: number }
+  | { kind: "reroll"; chunkId: string }
   | { kind: "retry"; failed: { chunkId: string; take: number }[] };
 
 export const jobKey = (chunkId: string, take: number) => `${chunkId}/t${take}`;
@@ -160,8 +161,9 @@ function freeTakeNumbers(occupied: Set<number>, count: number): number[] {
   return out;
 }
 
-function makeJob(chunk: Chunk, take: number, seed: number, hash: string): Job {
+function makeJob(chunk: Chunk, take: number, seed: number, hash: string, voiceId: string): Job {
   return {
+    voiceId,
     key: jobKey(chunk.id, take),
     chunkId: chunk.id,
     take,
@@ -175,17 +177,18 @@ function makeJob(chunk: Chunk, take: number, seed: number, hash: string): Job {
 
 /**
  * Builds the job list for a run. Fresh cached takes (same text hash) are
- * never regenerated; stale take slots are reused. Re-roll always adds new
- * take numbers on top of the fresh ones.
+ * never regenerated; stale take slots are reused. Re-roll regenerates a
+ * chunk's takes in place (t1..tN), replacing whatever is there.
  */
 export function planJobs(
   mode: RunMode,
   chunks: Chunk[],
   existing: ExistingTake[],
   seedFn: () => number = randomSeed,
+  voiceId: string = DEFAULT_VOICE,
 ): Job[] {
   const freshByChunk = new Map<string, Set<number>>();
-  const hashes = new Map(chunks.map((c) => [c.id, chunkHash(c)]));
+  const hashes = new Map(chunks.map((c) => [c.id, chunkHash(c, voiceId)]));
   for (const t of existing) {
     if (hashes.get(t.chunkId) !== t.textHash) continue;
     let set = freshByChunk.get(t.chunkId);
@@ -198,7 +201,7 @@ export function planJobs(
     list.flatMap((c) => {
       const have = fresh(c.id);
       const need = Math.max(0, c.takes - have.size);
-      return freeTakeNumbers(have, need).map((n) => makeJob(c, n, seedFn(), hashes.get(c.id)!));
+      return freeTakeNumbers(have, need).map((n) => makeJob(c, n, seedFn(), hashes.get(c.id)!, voiceId));
     });
 
   switch (mode.kind) {
@@ -207,10 +210,10 @@ export function planJobs(
     case "all":
       return fill(chunks);
     case "reroll": {
+      // Takes are capped per chunk, so a re-roll replaces them in place.
       const c = chunks.find((x) => x.id === mode.chunkId);
-      if (!c || mode.count < 1) return [];
-      const have = fresh(c.id);
-      return freeTakeNumbers(have, mode.count).map((n) => makeJob(c, n, seedFn(), hashes.get(c.id)!));
+      if (!c) return [];
+      return Array.from({ length: c.takes }, (_, i) => makeJob(c, i + 1, seedFn(), hashes.get(c.id)!, voiceId));
     }
     case "retry": {
       const byId = new Map(chunks.map((c) => [c.id, c]));
@@ -221,7 +224,7 @@ export function planJobs(
         const k = jobKey(f.chunkId, f.take);
         if (!c || seen.has(k) || fresh(c.id).has(f.take)) continue;
         seen.add(k);
-        jobs.push(makeJob(c, f.take, seedFn(), hashes.get(c.id)!));
+        jobs.push(makeJob(c, f.take, seedFn(), hashes.get(c.id)!, voiceId));
       }
       return jobs;
     }
