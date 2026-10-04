@@ -27,6 +27,7 @@ export function TakePlayer({
   take,
   blob,
   seed,
+  expires,
   fresh,
   picked,
   active,
@@ -37,6 +38,7 @@ export function TakePlayer({
   take: number;
   blob: Blob;
   seed: number;
+  expires: number;
   fresh: boolean;
   picked: boolean;
   active: boolean;
@@ -111,7 +113,7 @@ export function TakePlayer({
             ? "shadow-[inset_0_0_0_1px_var(--ink-32)]"
             : "shadow-[inset_0_0_0_1px_var(--hairline)]"
       } ${fresh ? "" : "opacity-45"}`}
-      title={`Take ${take} · seed ${seed}${fresh ? "" : " · stale (script changed)"}`}
+      title={`Take ${take} · seed ${seed} · kept until ${new Date(expires).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}${fresh ? "" : " · stale (script changed)"}`}
     >
       <audio
         ref={audio}

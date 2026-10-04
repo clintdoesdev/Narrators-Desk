@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useState } from "react";
 import { AlertCircle, ChevronDown, ChevronRight, Flame, Loader2, Timer } from "lucide-react";
+import { expiresAt } from "@/lib/cache";
 import { chunkStatus, STATUS_LABEL, type ChunkStatus } from "@/lib/status";
 import type { Chunk, Story } from "@/lib/types";
 import { NarrationText } from "./NarrationText";
@@ -137,6 +138,9 @@ export function AuditionList({
           </button>
         ))}
       </div>
+      <p className="t-caption text-center text-ink-48">
+        Takes stay on this device for 24 hours after they&rsquo;re generated. Export anything you want to keep.
+      </p>
       <p className="t-fine hidden text-center text-ink-48 lg:block">
         <Kbd>J</Kbd> <Kbd>K</Kbd> move between chunks · <Kbd>Space</Kbd> play · <Kbd>1</Kbd>–<Kbd>6</Kbd> pick a take
       </p>
@@ -318,6 +322,7 @@ const ChunkRow = memo(function ChunkRow({
               take={t.take}
               blob={t.blob}
               seed={t.seed}
+              expires={expiresAt(t.createdAt)}
               fresh={t.fresh}
               picked={pick === t.take}
               active={active && activeTake === t.take}

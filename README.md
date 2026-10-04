@@ -6,8 +6,8 @@ paragraph with a custom voice, audition them, pick the best one per chunk, and
 export one ordered zip for Premiere Pro.
 
 - Next.js 16 (App Router), TypeScript strict, Tailwind CSS 4, pnpm
-- No database: every generated MP3 is cached in the browser's IndexedDB, so a
-  refresh or a crash never spends credits twice
+- No database: every generated MP3 is cached in the browser's IndexedDB for
+  24 hours, so a refresh or a crash never spends credits twice
 - Password login with a signed, httpOnly session cookie
 - The ElevenLabs key and voice ID stay on the server
 
@@ -132,7 +132,14 @@ Tap any issue to jump to its line in the editor.
   them. If the phone goes offline mid-run, the run pauses and resumes on reconnect.
   A screen Wake Lock is held while a run is active.
 - Each take is saved to IndexedDB under `${video}/${chunkId}/t${take}` with
-  `{ blob, seed, model, createdAt, textHash }`. If you edit a chunk's text (or move
+  `{ blob, seed, model, createdAt, textHash }`.
+- **Retention: 24 hours.** Takes are kept for 24 hours after they're generated.
+  Picks and the pasted script are kept for 24 hours after their last change.
+  Anything older is pruned on load, and once a minute while the tab is open.
+  Export whatever you want to keep. Regenerating a take after it has expired
+  costs credits again. The app asks the browser for persistent storage so the
+  data isn't evicted early. Data is per browser: your phone and your desktop
+  don't share takes. If you edit a chunk's text (or move
   it between v2 and v3), its old takes are marked **stale**. They stay playable
   but can't be picked or exported, and the next run regenerates them.
   **Clear stale takes** frees the space.

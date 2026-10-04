@@ -4,7 +4,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { Minus, Plus } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SectionLabel } from "@/components/SectionLabel";
-import { getMeta, setMeta } from "@/lib/cache";
+import { loadScript, saveScript } from "@/lib/cache";
 import { summarize } from "@/lib/credits";
 import { EXAMPLE_SCRIPT } from "@/lib/example";
 import { parseScript } from "@/lib/parser";
@@ -22,7 +22,6 @@ import { useRun } from "./useRun";
 import { useTakes } from "./useTakes";
 import { useUsage } from "./useUsage";
 
-const SCRIPT_KEY = "script";
 const perChar = (m: Job["model"]) => VOICE_CONFIG[m].creditsPerChar;
 
 type Pending = { mode: RunMode; title: string; jobs: Job[] };
@@ -39,7 +38,7 @@ export function Desk() {
   const online = useOnline();
 
   useEffect(() => {
-    getMeta<string>(SCRIPT_KEY)
+    loadScript()
       .then((s) => {
         if (s) setScript(s);
       })
@@ -49,7 +48,7 @@ export function Desk() {
 
   useEffect(() => {
     if (!hydrated) return;
-    const t = window.setTimeout(() => setMeta(SCRIPT_KEY, script).catch(() => {}), 400);
+    const t = window.setTimeout(() => saveScript(script).catch(() => {}), 400);
     return () => window.clearTimeout(t);
   }, [script, hydrated]);
 

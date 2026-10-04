@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { deleteTakeKeys, loadPicks, loadTakes, savePicks, type TakeRecord } from "@/lib/cache";
+import {
+  deleteTakeKeys,
+  isExpired,
+  loadPicks,
+  loadTakes,
+  pruneExpired,
+  requestPersistence,
+  savePicks,
+  type TakeRecord,
+} from "@/lib/cache";
 import { chunkHash } from "@/lib/hash";
 import type { Chunk } from "@/lib/types";
 
@@ -29,7 +38,9 @@ export function useTakes(video: string | null, chunks: Chunk[]): TakesState {
   useEffect(() => {
     if (!video) return;
     let cancelled = false;
-    Promise.all([loadTakes(video), loadPicks(video)])
+    pruneExpired()
+      .catch(() => [])
+      .then(() => Promise.all([loadTakes(video), loadPicks(video)] as const))
       .then(([recs, picks]) => {
         if (cancelled) return;
         setRecords(recs);
@@ -46,6 +57,26 @@ export function useTakes(video: string | null, chunks: Chunk[]): TakesState {
       cancelled = true;
     };
   }, [video]);
+
+  // Ask the browser to keep our storage, and drop takes as they pass 24 hours.
+  useEffect(() => {
+    void requestPersistence();
+    const sweep = () => {
+      const now = Date.now();
+      setRecords((prev) => {
+        const next = prev.filter((r) => !isExpired(r.createdAt, now));
+        return next.length === prev.length ? prev : next;
+      });
+      void pruneExpired(now).catch(() => {});
+    };
+    const id = window.setInterval(sweep, 60_000);
+    const onVisible = () => document.visibilityState === "visible" && sweep();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   const current = useMemo(() => (loadedFor === video && video ? records : []), [loadedFor, video, records]);
 

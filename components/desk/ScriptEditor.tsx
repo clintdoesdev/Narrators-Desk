@@ -102,7 +102,7 @@ export const ScriptEditor = forwardRef<
         </div>
       </div>
       <p className="t-fine text-ink-48">
-        {lines.length.toLocaleString()} lines · {value.length.toLocaleString()} characters · saved on this device
+        {lines.length.toLocaleString()} lines · {value.length.toLocaleString()} characters · kept on this device for 24 hours
       </p>
     </div>
   );

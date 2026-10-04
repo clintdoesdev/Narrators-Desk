@@ -1,12 +1,30 @@
 import "fake-indexeddb/auto";
 import { describe, expect, it } from "vitest";
-import { deleteTakeKeys, getMeta, loadPicks, loadTakes, parseTakeKey, putTake, savePicks, setMeta, takeKey } from "@/lib/cache";
+import {
+  RETENTION_MS,
+  deleteTakeKeys,
+  getMeta,
+  isExpired,
+  loadPicks,
+  loadScript,
+  loadTakes,
+  parseTakeKey,
+  pruneExpired,
+  putTake,
+  savePicks,
+  saveScript,
+  setMeta,
+  takeKey,
+} from "@/lib/cache";
 
-const take = (n: number) => ({
+const NOW = Date.now();
+const HOUR = 60 * 60 * 1000;
+
+const take = (n: number, createdAt = NOW) => ({
   blob: new Blob([new Uint8Array([n])], { type: "audio/mpeg" }),
   seed: 1000 + n,
   model: "v3" as const,
-  createdAt: n,
+  createdAt,
   textHash: "abc",
 });
 
@@ -44,5 +62,50 @@ describe("IndexedDB cache", () => {
     expect(await loadPicks("missing")).toEqual({});
     await setMeta("script", "hello");
     expect(await getMeta("script")).toBe("hello");
+  });
+});
+
+describe("24-hour retention", () => {
+  it("defines the window", () => {
+    expect(RETENTION_MS).toBe(24 * HOUR);
+    expect(isExpired(NOW - 23 * HOUR, NOW)).toBe(false);
+    expect(isExpired(NOW - 24 * HOUR, NOW)).toBe(true);
+  });
+
+  it("hides and prunes takes older than 24 hours", async () => {
+    await putTake("ret", "S1-001", 1, take(1, NOW - 25 * HOUR));
+    await putTake("ret", "S1-001", 2, take(2, NOW - 2 * HOUR));
+    expect((await loadTakes("ret", NOW)).map((t) => t.take)).toEqual([2]);
+
+    const removed = await pruneExpired(NOW);
+    expect(removed).toContain("ret/S1-001/t1");
+    expect(removed).not.toContain("ret/S1-001/t2");
+    // Even an hour later, take 2 is still within its window...
+    expect((await loadTakes("ret", NOW + HOUR)).map((t) => t.take)).toEqual([2]);
+    // ...and it's gone once its own 24 hours are up.
+    expect(await loadTakes("ret", NOW + 23 * HOUR)).toEqual([]);
+  });
+
+  it("expires picks 24 hours after the last change", async () => {
+    await savePicks("ret-p", { "S1-001": 1 }, NOW - 25 * HOUR);
+    expect(await loadPicks("ret-p", NOW)).toEqual({});
+    await savePicks("ret-p", { "S1-001": 2 }, NOW);
+    expect(await loadPicks("ret-p", NOW + 23 * HOUR)).toEqual({ "S1-001": 2 });
+    await pruneExpired(NOW + 25 * HOUR);
+    expect(await loadPicks("ret-p", NOW)).toEqual({});
+  });
+
+  it("expires the saved script 24 hours after the last edit", async () => {
+    await saveScript("old draft", NOW - 25 * HOUR);
+    expect(await loadScript(NOW)).toBe("");
+    await saveScript("new draft", NOW);
+    expect(await loadScript(NOW + 23 * HOUR)).toBe("new draft");
+    await pruneExpired(NOW + 24 * HOUR);
+    expect(await loadScript(NOW)).toBe("");
+  });
+
+  it("still reads a script saved by an older build as a plain string", async () => {
+    await setMeta("script", "legacy");
+    expect(await loadScript(NOW)).toBe("legacy");
   });
 });
